@@ -4,7 +4,6 @@ import {
   TabsList,
   TabsTrigger,
 } from "../components/ui/tabs";
-import { DataTableDemo } from "./Table";
 import TransactionTable from "./TransactionTable";
 
 export function TabsHeader() {
@@ -13,13 +12,17 @@ export function TabsHeader() {
       <Tabs defaultValue="unsubmitted" className="gap-6">
         <TabsList className="flex gap-2">
           <TabsTrigger value="unsubmitted">Báo cáo chưa bổ sung</TabsTrigger>
+          <TabsTrigger value="submitted">Đã bổ sung</TabsTrigger>
           <TabsTrigger value="overdue">Báo cáo quá hạn</TabsTrigger>
         </TabsList>
         <TabsContent value="unsubmitted">
-          <TransactionTable />
+          <TransactionTable status="Chưa bổ sung" />
+        </TabsContent>
+        <TabsContent value="submitted">
+          <TransactionTable status="Đã bổ sung" />
         </TabsContent>
         <TabsContent value="overdue">
-          <DataTableDemo />
+          <TransactionTable status="Quá hạn" />
         </TabsContent>
       </Tabs>
     </div>
