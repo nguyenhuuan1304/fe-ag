@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
-import { fetchTransactions, uploadTransactionFile } from "../services/api";
+import {
+  fetchTransactionsById,
+  fetchTransactionsNotYet,
+  fetchTransactionsUpdateById,
+  uploadTransactionFile,
+} from "../services/api";
 import {
   Pagination,
   PaginationContent,
@@ -17,6 +22,27 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "./ui/dialog";
+import { Pencil } from "lucide-react";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "../components/ui/form";
+import { Textarea } from "./ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
+import { toast } from "sonner";
 
 type Transaction = {
   amount: string;
@@ -27,7 +53,6 @@ type Transaction = {
   custnm: string;
   custno: string;
   expected_declaration_date: string | null;
-  expected_delivery_date: string | null;
   id: number;
   is_document_added: boolean;
   note: string | null;
@@ -39,7 +64,16 @@ type Transaction = {
   updated_by: string | null;
 };
 
-export default function TransactionTable() {
+const FormSchema = z.object({
+  status: z.string().trim().min(1, { message: "status là bắt buộc" }),
+  note: z.string().trim().optional(),
+});
+
+export default function TransactionTable({
+  status = "Chưa bổ sung",
+}: {
+  status: string;
+}) {
   const [data, setData] = useState<Transaction[]>([]);
   const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
@@ -48,24 +82,28 @@ export default function TransactionTable() {
   const [searchInput, setSearchInput] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] =
+    useState<Transaction | null>(null);
 
-  const handleUpload = async () => {
-    if (!file) return;
+  const form = useForm<z.infer<typeof FormSchema>>({
+    resolver: zodResolver(FormSchema),
+    defaultValues: {
+      status: "",
+      note: "",
+    },
+  });
 
-    try {
-      await uploadTransactionFile(file);
-      await loadData();
-      setDialogOpen(false);
-      setFile(null);
-    } catch (error) {
-      console.error("Upload failed:", error);
-    }
-  };
-
-  const loadData = async () => {
+  // Load data with optional custom page & search
+  const loadData = async (customPage = page, customSearch = search) => {
     setLoading(true);
     try {
-      const res = await fetchTransactions(page, 10, search);
+      const res = await fetchTransactionsNotYet(
+        customPage,
+        10,
+        status,
+        customSearch
+      );
       setData(res.data);
       setLastPage(res.meta.lastPage);
     } catch (err) {
@@ -75,15 +113,70 @@ export default function TransactionTable() {
     }
   };
 
+  // Initial load (only once)
   useEffect(() => {
     loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, search]);
+  }, []);
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
+  // File upload handler
+  const handleUpload = async () => {
+    if (!file) return;
+    try {
+      await uploadTransactionFile(file);
+      await loadData(1, ""); // reset to page 1 and no search
+      setDialogOpen(false);
+      setFile(null);
+    } catch (error) {
+      console.error("Upload failed:", error);
+    }
+  };
+
+  // Search submit handler
+  const handleSearchSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSearch(searchInput.trim());
+    const trimmed = searchInput.trim();
+    setSearch(trimmed);
     setPage(1);
+    await loadData(1, trimmed);
+  };
+
+  // Page change handler
+  const handlePageChange = async (newPage: number) => {
+    setPage(newPage);
+    await loadData(newPage, search);
+  };
+
+  // Open edit modal and load transaction data
+  const handleEditTransaction = async (transaction: Transaction) => {
+    setSelectedTransaction(transaction);
+    setEditDialogOpen(true);
+    try {
+      const res = await fetchTransactionsById(transaction.id);
+      form.reset({
+        status: res.status || "",
+        note: res.note || "",
+      });
+    } catch (err) {
+      console.error("Fetch failed:", err);
+    }
+  };
+
+  // Submit edit form
+  const onSubmit = async (data: z.infer<typeof FormSchema>) => {
+    if (!selectedTransaction) return;
+    try {
+      await fetchTransactionsUpdateById(
+        selectedTransaction.id,
+        data.status,
+        data.note || ""
+      );
+      toast.success("Cập nhật thành công!");
+      setEditDialogOpen(false);
+      setSelectedTransaction(null);
+      await loadData(page, search);
+    } catch (error) {
+      console.error("Error updating transaction:", error);
+    }
   };
 
   return (
@@ -150,6 +243,7 @@ export default function TransactionTable() {
                 <th className="text-left p-2">Trạng thái</th>
                 <th className="text-left p-2">Ngày nhận hàng dự kiến</th>
                 <th className="text-left p-2">Ghi chú</th>
+                <th className="text-left p-2"></th>
               </tr>
             </thead>
             <tbody>
@@ -161,12 +255,98 @@ export default function TransactionTable() {
                   <td className="p-2">{tx.amount}</td>
                   <td className="p-2">{tx.currency}</td>
                   <td className="p-2">
-                    {new Date(tx.tradate).toLocaleDateString()}
+                    {tx.tradate}
+                    {/* {new Date(tx.tradate).toLocaleDateString()} */}
                   </td>
                   <td className="p-2 w-[200px]">{tx.remark}</td>
                   <td className="p-2">{tx.status ?? "-"}</td>
-                  <td className="p-2">{tx.expected_delivery_date ?? "-"}</td>
+                  <td className="p-2">{tx.expected_declaration_date ?? "-"}</td>
                   <td className="p-2">{tx.note ?? "-"}</td>
+                  <td className="p-2">
+                    <Dialog
+                      open={editDialogOpen}
+                      onOpenChange={setEditDialogOpen}
+                    >
+                      <DialogTrigger asChild>
+                        <div
+                          className="cursor-pointer hover:text-blue-500"
+                          onClick={() => {
+                            handleEditTransaction(tx);
+                          }}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </div>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-[500px] bg-white">
+                        <DialogHeader>
+                          <DialogTitle className="w-[80%]">
+                            {selectedTransaction?.custnm}
+                          </DialogTitle>
+                          <DialogDescription className="flex flex-col mt-6 gap-4"></DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4">
+                          <Form {...form}>
+                            <form
+                              onSubmit={form.handleSubmit(onSubmit)}
+                              className="w-full space-y-6"
+                            >
+                              <FormField
+                                control={form.control}
+                                name="status"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>
+                                      Status{" "}
+                                      <span className="text-red-500">*</span>
+                                    </FormLabel>
+                                    <FormControl>
+                                      <Select
+                                        value={field.value}
+                                        onValueChange={(value) => {
+                                          field.onChange(value);
+                                        }}
+                                      >
+                                        <SelectTrigger className="w-full">
+                                          <SelectValue placeholder="Chọn trạng thái" />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-white">
+                                          <SelectItem value="Chưa bổ sung">
+                                            Chưa bổ sung
+                                          </SelectItem>
+                                          <SelectItem value="Đã bổ sung">
+                                            Đã bổ sung
+                                          </SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={form.control}
+                                name="note"
+                                render={({ field }) => (
+                                  <FormItem className="relative">
+                                    <FormLabel>Note</FormLabel>
+                                    <FormControl>
+                                      <Textarea
+                                        {...field}
+                                        placeholder="Nhập ghi chú ..."
+                                      />
+                                    </FormControl>
+                                  </FormItem>
+                                )}
+                              />
+                              <div className="flex justify-center items-center">
+                                <Button type="submit">Lưu</Button>
+                              </div>
+                            </form>
+                          </Form>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </td>
                 </tr>
               ))}
               {data.length === 0 && (
@@ -185,7 +365,7 @@ export default function TransactionTable() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  onClick={() => handlePageChange(Math.max(1, page - 1))}
                   disabled={page === 1}
                 >
                   <PaginationPrevious />
@@ -198,7 +378,7 @@ export default function TransactionTable() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setPage((p) => Math.min(lastPage, p + 1))}
+                  onClick={() => handlePageChange(Math.min(lastPage, page + 1))}
                   disabled={page === lastPage}
                 >
                   <PaginationNext />
