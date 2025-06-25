@@ -1,3 +1,4 @@
+import type { AxiosResponse } from "axios";
 import axios from "../lib/axios";
 
 export const fetchTransactions = async (
@@ -68,6 +69,28 @@ export const uploadTransactionFile = async (file: File) => {
     },
   });
   return res.data;
+};
+
+export const uploadTransactionFileEmail = async (file: File) => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await axios.post("/transactions/upload-customers", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+  return res.data;
+};
+
+export const reportExcel = async (status: string) => {
+  const res: AxiosResponse = await axios.get(
+    `/transactions/report/${encodeURIComponent(status)}`,
+    {
+      responseType: "blob",
+    }
+  );
+  return res;
 };
 
 export const login = async (data: { email: string; password: string }) => {

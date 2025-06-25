@@ -3,7 +3,9 @@ import {
   fetchTransactionsById,
   fetchTransactionsNotYet,
   fetchTransactionsUpdateById,
+  reportExcel,
   uploadTransactionFile,
+  uploadTransactionFileEmail,
 } from "../services/api";
 import {
   Pagination,
@@ -22,7 +24,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "./ui/dialog";
-import { Pencil } from "lucide-react";
+import { Loader2, Pencil } from "lucide-react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -85,6 +87,9 @@ export default function TransactionTable({
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] =
     useState<Transaction | null>(null);
+  const [dialogOpenEmail, setDialogOpenEmail] = useState(false);
+  const [fileEmail, setFileEmail] = useState<File | null>(null);
+  const [isLoadingEx, setIsLoadingEx] = useState<boolean>(false);
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -104,10 +109,12 @@ export default function TransactionTable({
         status,
         customSearch
       );
-      setData(res.data);
-      setLastPage(res.meta.lastPage);
+      setData(res.data || []); // Đảm bảo data là mảng
+      setLastPage(res.meta?.lastPage ?? 1); // Xử lý meta không tồn tại
     } catch (err) {
       console.error("Fetch failed:", err);
+      setData([]);
+      setLastPage(1);
     } finally {
       setLoading(false);
     }
@@ -126,6 +133,19 @@ export default function TransactionTable({
       await loadData(1, ""); // reset to page 1 and no search
       setDialogOpen(false);
       setFile(null);
+    } catch (error) {
+      console.error("Upload failed:", error);
+    }
+  };
+
+  // File upload handler
+  const handleUploadEmail = async () => {
+    if (!fileEmail) return;
+    try {
+      await uploadTransactionFileEmail(fileEmail);
+      await loadData(1, ""); // reset to page 1 and no search
+      setDialogOpenEmail(false);
+      setFileEmail(null);
     } catch (error) {
       console.error("Upload failed:", error);
     }
@@ -179,51 +199,134 @@ export default function TransactionTable({
     }
   };
 
+  const handleEx = async () => {
+    setIsLoadingEx(true);
+    try {
+      const response = await reportExcel(status);
+
+      // Create a Blob from the response data
+      const blob = new Blob([response.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+
+      // Create a temporary URL for the Blob
+      const url = window.URL.createObjectURL(blob);
+
+      // Create a temporary link element to trigger the download
+      const link = document.createElement("a");
+      link.href = url;
+      const now = new Date();
+      const formattedDate = now
+        .toLocaleDateString("vi-VN")
+        .split("/")
+        .join("-");
+      link.download = `report-${status}-${formattedDate}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+
+      // Clean up
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Export error:", err);
+    } finally {
+      setIsLoadingEx(false);
+    }
+  };
+
   return (
     <div className="overflow-auto w-full mx-auto space-y-4">
       <div className="flex justify-between w-full">
-        <form onSubmit={handleSearchSubmit} className="flex gap-2 max-w-md">
-          <Input
-            placeholder="Tìm theo tên khách hàng..."
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-          />
-          <Button className="w-[200px]" type="submit">
-            Tìm kiếm
-          </Button>
-        </form>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button
-              className="w-[200px] !bg-[#F97316] text-white"
-              onClick={() => setDialogOpen(true)}
-            >
-              Upload IPCAS Excel
+        <div className="flex items-center gap-4">
+          <form onSubmit={handleSearchSubmit} className="flex gap-2 max-w-md">
+            <Input
+              placeholder="Tìm theo tên khách hàng..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+            />
+            <Button className="w-[200px] bg-gray-100" type="submit">
+              Tìm kiếm
             </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px] bg-white">
-            <DialogHeader>
-              <DialogTitle>Upload IPCAS Excel</DialogTitle>
-              <DialogDescription className="flex flex-col mt-6 gap-4">
-                <Input
-                  type="file"
-                  accept=".xlsx,.xls"
-                  onChange={(e) => setFile(e.target.files?.[0] || null)}
-                  className="w-full"
-                />
-                <div className="flex justify-end">
-                  <Button
-                    onClick={handleUpload}
-                    className="!bg-[#F97316] text-white"
-                  >
-                    Tải lên
-                  </Button>
+          </form>
+          {status !== "Đã bổ sung" && (
+            <Button onClick={handleEx} className="bg-gray-100">
+              {isLoadingEx ? (
+                <div className="flex items-center">
+                  <Loader2 className="animate-spin h-4 w-4" />
+                  <span className="ml-2">Đang xuất excel...</span>
                 </div>
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4"></div>
-          </DialogContent>
-        </Dialog>
+              ) : (
+                "Xuất excel"
+              )}
+            </Button>
+          )}
+        </div>
+        <div className="flex gap-2">
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button
+                className="w-[200px] !bg-[#F97316] text-white"
+                onClick={() => setDialogOpen(true)}
+              >
+                Upload IPCAS Excel
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px] bg-white">
+              <DialogHeader>
+                <DialogTitle>Upload IPCAS Excel</DialogTitle>
+                <DialogDescription className="flex flex-col mt-6 gap-4">
+                  <Input
+                    type="file"
+                    accept=".xlsx,.xls"
+                    onChange={(e) => setFile(e.target.files?.[0] || null)}
+                    className="w-full cursor-pointer"
+                  />
+                  <div className="flex justify-end">
+                    <Button
+                      onClick={handleUpload}
+                      className="!bg-[#F97316] text-white"
+                    >
+                      Tải lên
+                    </Button>
+                  </div>
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4"></div>
+            </DialogContent>
+          </Dialog>
+          <Dialog open={dialogOpenEmail} onOpenChange={setDialogOpenEmail}>
+            <DialogTrigger asChild>
+              <Button
+                className="w-[200px] !bg-[#F97316] text-white"
+                onClick={() => setDialogOpenEmail(true)}
+              >
+                Upload Email Excel
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px] bg-white">
+              <DialogHeader>
+                <DialogTitle>Upload Email Excel</DialogTitle>
+                <DialogDescription className="flex flex-col mt-6 gap-4">
+                  <Input
+                    type="file"
+                    accept=".xlsx,.xls"
+                    onChange={(e) => setFileEmail(e.target.files?.[0] || null)}
+                    className="w-full"
+                  />
+                  <div className="flex justify-end">
+                    <Button
+                      onClick={handleUploadEmail}
+                      className="!bg-[#F97316] text-white"
+                    >
+                      Tải lên
+                    </Button>
+                  </div>
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4"></div>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {loading ? (
@@ -339,7 +442,7 @@ export default function TransactionTable({
                                 )}
                               />
                               <div className="flex justify-center items-center">
-                                <Button type="submit">Lưu</Button>
+                                <Button type="submit" className='bg-gray-200'>Lưu</Button>
                               </div>
                             </form>
                           </Form>
