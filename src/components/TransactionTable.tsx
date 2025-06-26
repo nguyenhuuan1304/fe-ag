@@ -5,7 +5,6 @@ import {
   fetchTransactionsUpdateById,
   reportExcel,
   uploadTransactionFile,
-  uploadTransactionFileEmail,
 } from "../services/api";
 import {
   Pagination,
@@ -87,8 +86,6 @@ export default function TransactionTable({
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] =
     useState<Transaction | null>(null);
-  const [dialogOpenEmail, setDialogOpenEmail] = useState(false);
-  const [fileEmail, setFileEmail] = useState<File | null>(null);
   const [isLoadingEx, setIsLoadingEx] = useState<boolean>(false);
 
   const form = useForm<z.infer<typeof FormSchema>>({
@@ -137,20 +134,6 @@ export default function TransactionTable({
       console.error("Upload failed:", error);
     }
   };
-
-  // File upload handler
-  const handleUploadEmail = async () => {
-    if (!fileEmail) return;
-    try {
-      await uploadTransactionFileEmail(fileEmail);
-      await loadData(1, ""); // reset to page 1 and no search
-      setDialogOpenEmail(false);
-      setFileEmail(null);
-    } catch (error) {
-      console.error("Upload failed:", error);
-    }
-  };
-
   // Search submit handler
   const handleSearchSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -294,38 +277,6 @@ export default function TransactionTable({
               <div className="grid gap-4"></div>
             </DialogContent>
           </Dialog>
-          <Dialog open={dialogOpenEmail} onOpenChange={setDialogOpenEmail}>
-            <DialogTrigger asChild>
-              <Button
-                className="w-[200px] !bg-[#F97316] text-white"
-                onClick={() => setDialogOpenEmail(true)}
-              >
-                Upload Email Excel
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] bg-white">
-              <DialogHeader>
-                <DialogTitle>Upload Email Excel</DialogTitle>
-                <DialogDescription className="flex flex-col mt-6 gap-4">
-                  <Input
-                    type="file"
-                    accept=".xlsx,.xls"
-                    onChange={(e) => setFileEmail(e.target.files?.[0] || null)}
-                    className="w-full"
-                  />
-                  <div className="flex justify-end">
-                    <Button
-                      onClick={handleUploadEmail}
-                      className="!bg-[#F97316] text-white"
-                    >
-                      Tải lên
-                    </Button>
-                  </div>
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4"></div>
-            </DialogContent>
-          </Dialog>
         </div>
       </div>
 
@@ -442,7 +393,9 @@ export default function TransactionTable({
                                 )}
                               />
                               <div className="flex justify-center items-center">
-                                <Button type="submit" className='bg-gray-200'>Lưu</Button>
+                                <Button type="submit" className="bg-gray-200">
+                                  Lưu
+                                </Button>
                               </div>
                             </form>
                           </Form>

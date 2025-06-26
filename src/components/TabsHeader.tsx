@@ -4,6 +4,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "../components/ui/tabs";
+import CustomerTable from "./CustomerTable";
 import TransactionTable from "./TransactionTable";
 
 export function TabsHeader() {
@@ -14,6 +15,7 @@ export function TabsHeader() {
           <TabsTrigger value="unsubmitted">Báo cáo chưa bổ sung</TabsTrigger>
           <TabsTrigger value="submitted">Đã bổ sung</TabsTrigger>
           <TabsTrigger value="overdue">Báo cáo quá hạn</TabsTrigger>
+          <TabsTrigger value="mailList">Danh sách gửi mail</TabsTrigger>
         </TabsList>
         <TabsContent value="unsubmitted">
           <TransactionTable status="Chưa bổ sung" />
@@ -23,6 +25,9 @@ export function TabsHeader() {
         </TabsContent>
         <TabsContent value="overdue">
           <TransactionTable status="Quá hạn" />
+        </TabsContent>
+        <TabsContent value="mailList">
+          <CustomerTable />
         </TabsContent>
       </Tabs>
     </div>

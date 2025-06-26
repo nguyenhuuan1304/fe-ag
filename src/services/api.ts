@@ -25,6 +25,13 @@ export const fetchTransactionsNotYet = async (
   return res.data;
 };
 
+export const fetchCustomer = async (page: number, pageSize: number) => {
+  const res = await axios.get(`/customers/duplicates`, {
+    params: { page, pageSize },
+  });
+  return res.data;
+};
+
 export const fetchTransactionsOverdue = async (
   page: number,
   limit: number,
@@ -64,6 +71,18 @@ export const uploadTransactionFile = async (file: File) => {
   formData.append("file", file);
 
   const res = await axios.post("/transactions/upload-ipcas", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+  return res.data;
+};
+
+export const uploadCustomerFile = async (file: File) => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await axios.post("/customers/upload-excel", formData, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
