@@ -7,49 +7,73 @@ const api = axios.create({
   },
 });
 
-// Store the timer reference to clear it later
 let refreshTimer: string | number | NodeJS.Timeout | undefined;
+let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (value: any) => void;
+  reject: (reason?: any) => void;
+}> = [];
 
-// Function to schedule token refresh
+const processQueue = (error: any, token: string | null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
 const scheduleTokenRefresh = () => {
-  // Clear any existing timer to avoid duplicates
   if (refreshTimer) {
     clearTimeout(refreshTimer);
   }
 
-  // Set a timer to refresh token after 14 minutes (14 * 60 * 1000 milliseconds)
-  const refreshTime = 14 * 60 * 1000; // 14 minutes
-  refreshTimer = setTimeout(async () => {
-    try {
+  const refreshTime = 14 * 60 * 1000;
+  try {
+    refreshTimer = setTimeout(() => {
+      // Refresh token is optional, log runs independently
       const refreshToken = localStorage.getItem("refreshToken");
-      if (refreshToken) {
-        const refreshRes = await axios.post(
-          "http://localhost:3001/auth/refresh",
-          {
-            refreshToken,
-          }
-        );
-
-        // Update tokens in localStorage
-        localStorage.setItem("token", refreshRes.data.accessToken);
-        localStorage.setItem("refreshToken", refreshRes.data.refreshToken);
-
-        // Schedule the next refresh
-        scheduleTokenRefresh();
+      if (refreshToken && !isRefreshing) {
+        isRefreshing = true;
+        axios
+          .post(
+            "http://localhost:3001/auth/refresh",
+            { refreshToken: refreshToken }, // Explicitly name the field
+            { validateStatus: (status) => status < 500 }
+          )
+          .then((refreshRes) => {
+            if (refreshRes) {
+              localStorage.setItem("token", refreshRes.data.access_token);
+              localStorage.setItem(
+                "refreshToken",
+                refreshRes.data.refresh_token
+              );
+              processQueue(null, refreshRes.data.access_token);
+            }
+          })
+          .catch((error) => {
+            console.error(
+              "Refresh error:",
+              error.message,
+              error.response?.data || error
+            );
+            processQueue(error, null);
+          })
+          .finally(() => {
+            isRefreshing = false;
+            scheduleTokenRefresh(); // Reschedule every 2 minutes
+          });
       } else {
-        // No refresh token, redirect to login
-        localStorage.clear();
-        window.location.href = "/login";
+        scheduleTokenRefresh(); // Reschedule regardless
       }
-    } catch (error) {
-      console.error("Token refresh failed:", error);
-      localStorage.clear();
-      window.location.href = "/login";
-    }
-  }, refreshTime);
+    }, refreshTime);
+  } catch (error) {
+    console.error("Failed to set timer:", error);
+  }
 };
 
-// Response interceptor to handle 401 errors
 api.interceptors.response.use(
   (res) => res,
   async (error) => {
@@ -61,59 +85,76 @@ api.interceptors.response.use(
     ) {
       originalRequest._retry = true;
 
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        });
+      }
+
       try {
+        isRefreshing = true;
+        const refreshToken = localStorage.getItem("refreshToken");
         const refreshRes = await axios.post(
           "http://localhost:3001/auth/refresh",
-          {
-            refreshToken: localStorage.getItem("refreshToken"),
-          }
+          { refreshToken: refreshToken }, // Explicit field name
+          { validateStatus: (status) => status < 500 }
         );
 
-        // Update tokens
-        localStorage.setItem("token", refreshRes.data.accessToken);
-        localStorage.setItem("refreshToken", refreshRes.data.refreshToken);
-
-        // Schedule next refresh
-        scheduleTokenRefresh();
-
-        // Attach new token to the original request
-        originalRequest.headers[
-          "Authorization"
-        ] = `Bearer ${refreshRes.data.accessToken}`;
-
-        return api(originalRequest);
-      } catch {
-        localStorage.clear();
-        window.location.href = "/login";
+        if (refreshRes.status === 200) {
+          localStorage.setItem("token", refreshRes.data.access_token);
+          localStorage.setItem("refreshToken", refreshRes.data.refresh_token);
+          processQueue(null, refreshRes.data.access_token);
+          scheduleTokenRefresh();
+          originalRequest.headers[
+            "Authorization"
+          ] = `Bearer ${refreshRes.data.access_token}`;
+          return api(originalRequest);
+        } else {
+          console.warn(
+            "401 Refresh failed, status:",
+            refreshRes.status,
+            refreshRes.data
+          );
+          return Promise.reject(new Error("Refresh failed"));
+        }
+      } catch (refreshError) {
+        processQueue(refreshError, null);
+        setTimeout(() => {
+          localStorage.clear();
+          window.location.href = "/login";
+        }, 5000);
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
       }
     }
-
     return Promise.reject(error);
   }
 );
 
-// Request interceptor to attach access token
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
   return config;
 });
 
-// Start the refresh cycle when the app initializes (e.g., after login)
 export const startTokenRefresh = () => {
   if (localStorage.getItem("token") && localStorage.getItem("refreshToken")) {
+    scheduleTokenRefresh();
+  } else {
     scheduleTokenRefresh();
   }
 };
 
-// Function to call after successful login to store tokens and start refresh cycle
 export const handleLoginSuccess = (
   accessToken: string,
   refreshToken: string
 ) => {
   localStorage.setItem("token", accessToken);
   localStorage.setItem("refreshToken", refreshToken);
-  scheduleTokenRefresh();
+  startTokenRefresh();
 };
 
 export default api;

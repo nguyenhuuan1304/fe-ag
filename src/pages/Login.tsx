@@ -40,13 +40,12 @@ export default function LoginPage() {
   const onSubmit = async (data: z.infer<typeof FormSchema>) => {
     try {
       const res = await api.post("/auth/login", data);
-      login(res.data.access_token);
+      login(res.data.access_token, res.data.refresh_token); // Pass both tokens
       toast.success("Đăng nhập thành công");
-      localStorage.setItem("refreshToken", res.data.refresh_token);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       toast.error(
-        error?.response.data.message ||
+        error?.response?.data?.message ||
           "Đăng nhập thất bại, vui lòng thử lại sau"
       );
     }
