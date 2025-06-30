@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchCustomer, uploadCustomerFile } from "../services/api";
+import { fetchCustomer, fetchCustomersTransactionsSentEmail, uploadCustomerFile } from "../services/api";
 import {
   Pagination,
   PaginationContent,
@@ -48,7 +48,7 @@ type CustomerResponse = {
   phone_number: string;
 };
 
-export default function CustomerTable() {
+export default function CustomerTable({ isSendEmail = false }: { isSendEmail?: boolean }) {
   const [data, setData] = useState<CustomerResponse[]>([]);
   const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
@@ -60,7 +60,9 @@ export default function CustomerTable() {
 
   const loadDataCustomer = async (pageNumber: number = 1) => {
     try {
-      const res = await fetchCustomer(pageNumber, 10);
+      const res = isSendEmail
+        ? await fetchCustomersTransactionsSentEmail(pageNumber, 10, isSendEmail)
+        : await fetchCustomer(pageNumber, 10);
       setData(res.customers || []);
       setLastPage(res.meta?.lastPage ?? 1);
     } catch (err) {

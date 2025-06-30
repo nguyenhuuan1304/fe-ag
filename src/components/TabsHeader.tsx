@@ -15,7 +15,8 @@ export function TabsHeader() {
           <TabsTrigger value="unsubmitted">Báo cáo chưa bổ sung</TabsTrigger>
           <TabsTrigger value="submitted">Đã bổ sung</TabsTrigger>
           <TabsTrigger value="overdue">Báo cáo quá hạn</TabsTrigger>
-          <TabsTrigger value="mailList">Danh sách gửi mail</TabsTrigger>
+          <TabsTrigger value="notSendMailList">Danh sách chưa gửi mail</TabsTrigger>
+          <TabsTrigger value="sentMailList">Danh sách đã gửi mail</TabsTrigger>
         </TabsList>
         <TabsContent value="unsubmitted">
           <TransactionTable status="Chưa bổ sung" />
@@ -26,8 +27,11 @@ export function TabsHeader() {
         <TabsContent value="overdue">
           <TransactionTable status="Quá hạn" />
         </TabsContent>
-        <TabsContent value="mailList">
+        <TabsContent value="notSendMailList">
           <CustomerTable />
+        </TabsContent>
+        <TabsContent value="sentMailList">
+          <CustomerTable isSendEmail={true} />
         </TabsContent>
       </Tabs>
     </div>
