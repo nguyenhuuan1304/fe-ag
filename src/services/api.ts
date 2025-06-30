@@ -32,6 +32,18 @@ export const fetchCustomer = async (page: number, pageSize: number) => {
   return res.data;
 };
 
+export const fetchCustomersTransactionsSentEmail = async (
+  page: number,
+  limit: number,
+  isSendEmail: boolean
+) => {
+  const res = await axios.get(`/customers/with-transactions-send-mail`, {
+    params: { page, limit, isSendEmail },
+  });
+  return res.data;
+};
+
+
 export const fetchTransactionsOverdue = async (
   page: number,
   limit: number,
