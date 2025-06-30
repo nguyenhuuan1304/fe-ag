@@ -41,8 +41,10 @@ export default function LoginPage() {
     try {
       const res = await api.post("/auth/login", data);
       login(res.data.access_token, res.data.refresh_token); // Pass both tokens
+      // lưu user vào localStorage
+      localStorage.setItem("user", JSON.stringify(res.data.user));
       toast.success("Đăng nhập thành công");
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       toast.error(
         error?.response?.data?.message ||

@@ -7,7 +7,7 @@ import Header from "./pages/Header";
 
 function AppRouter() {
   return (
-    <div className="flex flex-col h-screen w-screen">
+    <div className="flex flex-col h-screen w-full">
       <Header />
       <Routes>
         <Route element={<ProtectedRoute />}>

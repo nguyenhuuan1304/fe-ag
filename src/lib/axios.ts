@@ -60,6 +60,8 @@ const scheduleTokenRefresh = () => {
               error.response?.data || error
             );
             processQueue(error, null);
+            localStorage.clear();
+            window.location.href = "/login";
           })
           .finally(() => {
             isRefreshing = false;
