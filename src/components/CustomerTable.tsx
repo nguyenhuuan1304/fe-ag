@@ -136,31 +136,31 @@ export default function CustomerTable({ isSendEmail = false }: { isSendEmail?: b
             <DialogContent className="sm:max-w-[425px] bg-white">
               <DialogHeader>
                 <DialogTitle>Upload Email Excel</DialogTitle>
-                <DialogDescription className="flex flex-col mt-6 gap-4">
-                  <Input
-                    type="file"
-                    accept=".xlsx,.xls"
-                    onChange={(e) => setFileEmail(e.target.files?.[0] || null)}
-                    className="w-full"
-                  />
-                  <div className="flex justify-end">
-                    <Button
-                      onClick={handleUploadEmail}
-                      className="!bg-[#F97316] text-white"
-                    >
-                      Tải lên
-                    </Button>
-                  </div>
-                </DialogDescription>
+                <DialogDescription className="hidden"></DialogDescription>
               </DialogHeader>
-              <div className="grid gap-4"></div>
+              <div className="grid gap-4">
+                <Input
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={(e) => setFileEmail(e.target.files?.[0] || null)}
+                  className="w-full cursor-pointer"
+                />
+                <div className="flex justify-end">
+                  <Button
+                    onClick={handleUploadEmail}
+                    className="!bg-[#F97316] text-white"
+                  >
+                    Tải lên
+                  </Button>
+                </div>
+              </div>
             </DialogContent>
           </Dialog>
         </div>
       </div>
 
       {loading ? (
-        <p>Loading...</p>
+        <p>Vui lòng chờ...</p>
       ) : (
         <>
           <table className="min-w-full text-sm border border-gray-200 rounded">
@@ -183,41 +183,45 @@ export default function CustomerTable({ isSendEmail = false }: { isSendEmail?: b
               ))}
               {data.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="text-center p-4 text-gray-500">
-                    Không có kết quả khách hàng.
+                  <td colSpan={4} className="text-center p-4 text-gray-500">
+                    Không có dữ liệu khách hàng.
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
 
-          <Pagination className="mt-4">
-            <PaginationContent className="flex gap-2 items-center">
-              <PaginationItem>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(Math.max(1, page - 1))}
-                  disabled={page === 1}
-                >
-                  <PaginationPrevious />
-                </Button>
-              </PaginationItem>
-              <span className="text-sm">
-                Trang {page} / {lastPage}
-              </span>
-              <PaginationItem>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(Math.min(lastPage, page + 1))}
-                  disabled={page === lastPage}
-                >
-                  <PaginationNext />
-                </Button>
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
+          {data.length > 0 && (
+            <Pagination className="mt-4">
+              <PaginationContent className="flex gap-2 items-center">
+                <PaginationItem>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(Math.max(1, page - 1))}
+                    disabled={page === 1}
+                  >
+                    <PaginationPrevious />
+                  </Button>
+                </PaginationItem>
+                <span className="text-sm">
+                  Trang {page} / {lastPage}
+                </span>
+                <PaginationItem>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      handlePageChange(Math.min(lastPage, page + 1))
+                    }
+                    disabled={page === lastPage}
+                  >
+                    <PaginationNext />
+                  </Button>
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          )}
         </>
       )}
     </div>
