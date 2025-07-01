@@ -25,9 +25,13 @@ export const fetchTransactionsNotYet = async (
   return res.data;
 };
 
-export const fetchCustomer = async (page: number, pageSize: number) => {
+export const fetchCustomer = async (
+  page: number,
+  pageSize: number,
+  search: string
+) => {
   const res = await axios.get(`/customers/duplicates`, {
-    params: { page, pageSize },
+    params: { page, pageSize, search },
   });
   return res.data;
 };
@@ -35,10 +39,11 @@ export const fetchCustomer = async (page: number, pageSize: number) => {
 export const fetchCustomersTransactionsSentEmail = async (
   page: number,
   limit: number,
-  isSendEmail: boolean
+  isSendEmail: boolean,
+  search: string
 ) => {
   const res = await axios.get(`/customers/with-transactions-send-mail`, {
-    params: { page, limit, isSendEmail },
+    params: { page, limit, isSendEmail, search },
   });
   return res.data;
 };
