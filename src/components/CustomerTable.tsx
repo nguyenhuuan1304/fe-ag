@@ -53,16 +53,20 @@ export default function CustomerTable({ isSendEmail = false }: { isSendEmail?: b
   const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const [loading, setLoading] = useState(false);
-  // const [search, setSearch] = useState("");
-  // const [searchInput, setSearchInput] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const [dialogOpenEmail, setDialogOpenEmail] = useState(false);
   const [fileEmail, setFileEmail] = useState<File | null>(null);
 
-  const loadDataCustomer = async (pageNumber: number = 1) => {
+  const loadDataCustomer = async (pageNumber: number = 1, searchInput: string = '') => {
     try {
       const res = isSendEmail
-        ? await fetchCustomersTransactionsSentEmail(pageNumber, 10, isSendEmail)
-        : await fetchCustomer(pageNumber, 10);
+        ? await fetchCustomersTransactionsSentEmail(
+            pageNumber,
+            10,
+            isSendEmail,
+            searchInput
+          )
+        : await fetchCustomer(pageNumber, 10, searchInput);
       setData(res.customers || []);
       setLastPage(res.meta?.lastPage ?? 1);
     } catch (err) {
@@ -93,35 +97,33 @@ export default function CustomerTable({ isSendEmail = false }: { isSendEmail?: b
   };
 
   // Search submit handler
-  // const handleSearchSubmit = async (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   const trimmed = searchInput.trim();
-  //   setSearch(trimmed);
-  //   setPage(1);
-  //   await loadDataCustomer(1, trimmed);
-  // };
+  const handleSearchSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPage(1);
+    await loadDataCustomer(1, searchInput);
+  };
 
   // Page change handler
   const handlePageChange = async (newPage: number) => {
     setPage(newPage);
-    await loadDataCustomer(newPage);
+    await loadDataCustomer(newPage, searchInput);
   };
 
   return (
     <div className="overflow-auto w-full mx-auto space-y-4">
       <div className="flex justify-between w-full">
-        {/* <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4">
           <form onSubmit={handleSearchSubmit} className="flex gap-2 max-w-md">
             <Input
               placeholder="Tìm theo tên khách hàng..."
               value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
+              onChange={(e) => setSearchInput(e.target.value.trim())}
             />
             <Button className="w-[200px] bg-gray-100" type="submit">
               Tìm kiếm
             </Button>
           </form>
-        </div> */}
+        </div>
         <div></div>
         <div className="flex gap-2">
           <Dialog open={dialogOpenEmail} onOpenChange={setDialogOpenEmail}>
