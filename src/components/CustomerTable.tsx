@@ -126,7 +126,7 @@ export default function CustomerTable({
         <div className="flex items-center gap-4">
           <form onSubmit={handleSearchSubmit} className="flex gap-2 max-w-md">
             <Input
-              placeholder="Tìm theo tên khách hàng..."
+              placeholder="Tìm theo email..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value.trim())}
             />
@@ -189,7 +189,7 @@ export default function CustomerTable({
               {data.map((tx) => (
                 <tr key={tx.id} className="border-b border-gray-200">
                   <td className="p-2">{tx.custno}</td>
-                  <td className="p-2">{tx.contact_person}</td>
+                  <td className="p-2">{tx.customer_name}</td>
                   <td className="p-2">{tx.contact_person}</td>
                   <td className="p-2">{tx.email}</td>
                 </tr>
