@@ -1,24 +1,33 @@
-import axios from "axios";
+import axios, { AxiosError } from "axios";
+import type { AxiosResponse, AxiosRequestConfig } from "axios";
+import config from '../config';
 
 const api = axios.create({
-  baseURL: "http://localhost:3001",
+  baseURL: config.API_URL,
   headers: {
     "Content-Type": "application/json",
   },
 });
 
-let refreshTimer: string | number | NodeJS.Timeout | undefined;
-let isRefreshing = false;
-let failedQueue: Array<{
-  resolve: (value: any) => void;
-  reject: (reason?: any) => void;
-}> = [];
+interface RefreshTokenResponse {
+  access_token: string;
+  refresh_token: string;
+}
 
-const processQueue = (error: any, token: string | null) => {
+interface FailedQueueItem {
+  resolve: (token: string) => void;
+  reject: (error: AxiosError) => void;
+}
+
+let refreshTimer: NodeJS.Timeout | undefined;
+let isRefreshing = false;
+let failedQueue: FailedQueueItem[] = [];
+
+const processQueue = (error: AxiosError | null, token: string | null) => {
   failedQueue.forEach((prom) => {
     if (error) {
       prom.reject(error);
-    } else {
+    } else if (token) {
       prom.resolve(token);
     }
   });
@@ -30,45 +39,38 @@ const scheduleTokenRefresh = () => {
     clearTimeout(refreshTimer);
   }
 
-  const refreshTime = 14 * 60 * 1000;
+  const refreshTime = 79 * 60 * 60 * 1000;
   try {
-    refreshTimer = setTimeout(() => {
-      // Refresh token is optional, log runs independently
+    refreshTimer = setTimeout(async () => {
       const refreshToken = localStorage.getItem("refreshToken");
       if (refreshToken && !isRefreshing) {
         isRefreshing = true;
-        axios
-          .post(
-            "http://localhost:3001/auth/refresh",
-            { refreshToken: refreshToken }, // Explicitly name the field
+        try {
+          const refreshRes = await axios.post<RefreshTokenResponse>(
+            `${config.API_URL}/auth/refresh`,
+            { refreshToken },
             { validateStatus: (status) => status < 500 }
-          )
-          .then((refreshRes) => {
-            if (refreshRes) {
-              localStorage.setItem("token", refreshRes.data.access_token);
-              localStorage.setItem(
-                "refreshToken",
-                refreshRes.data.refresh_token
-              );
-              processQueue(null, refreshRes.data.access_token);
-            }
-          })
-          .catch((error) => {
-            console.error(
-              "Refresh error:",
-              error.message,
-              error.response?.data || error
-            );
-            processQueue(error, null);
-            localStorage.clear();
-            window.location.href = "/login";
-          })
-          .finally(() => {
-            isRefreshing = false;
-            scheduleTokenRefresh(); // Reschedule every 2 minutes
-          });
+          );
+          if (refreshRes.data) {
+            localStorage.setItem("token", refreshRes.data.access_token);
+            localStorage.setItem("refreshToken", refreshRes.data.refresh_token);
+            processQueue(null, refreshRes.data.access_token);
+          }
+        } catch (error) {
+          console.error(
+            "Refresh error:",
+            (error as AxiosError).message,
+            (error as AxiosError).response?.data || error
+          );
+          processQueue(error as AxiosError, null);
+          localStorage.clear();
+          window.location.href = "/login";
+        } finally {
+          isRefreshing = false;
+          scheduleTokenRefresh();
+        }
       } else {
-        scheduleTokenRefresh(); // Reschedule regardless
+        scheduleTokenRefresh();
       }
     }, refreshTime);
   } catch (error) {
@@ -77,9 +79,11 @@ const scheduleTokenRefresh = () => {
 };
 
 api.interceptors.response.use(
-  (res) => res,
-  async (error) => {
-    const originalRequest = error.config;
+  (res: AxiosResponse) => res,
+  async (error: AxiosError) => {
+    const originalRequest = error.config as AxiosRequestConfig & {
+      _retry?: boolean;
+    };
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
@@ -88,17 +92,23 @@ api.interceptors.response.use(
       originalRequest._retry = true;
 
       if (isRefreshing) {
-        return new Promise((resolve, reject) => {
+        return new Promise<string>((resolve, reject) => {
           failedQueue.push({ resolve, reject });
-        });
+        })
+          .then((token) => {
+            originalRequest.headers = originalRequest.headers || {};
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return api(originalRequest);
+          })
+          .catch((err) => Promise.reject(err));
       }
 
       try {
         isRefreshing = true;
         const refreshToken = localStorage.getItem("refreshToken");
-        const refreshRes = await axios.post(
-          "http://localhost:3001/auth/refresh",
-          { refreshToken: refreshToken }, // Explicit field name
+        const refreshRes = await axios.post<RefreshTokenResponse>(
+          `${config.API_URL}/auth/refresh`,
+          { refreshToken },
           { validateStatus: (status) => status < 500 }
         );
 
@@ -107,9 +117,8 @@ api.interceptors.response.use(
           localStorage.setItem("refreshToken", refreshRes.data.refresh_token);
           processQueue(null, refreshRes.data.access_token);
           scheduleTokenRefresh();
-          originalRequest.headers[
-            "Authorization"
-          ] = `Bearer ${refreshRes.data.access_token}`;
+          originalRequest.headers = originalRequest.headers || {};
+          originalRequest.headers.Authorization = `Bearer ${refreshRes.data.access_token}`;
           return api(originalRequest);
         } else {
           console.warn(
@@ -120,7 +129,7 @@ api.interceptors.response.use(
           return Promise.reject(new Error("Refresh failed"));
         }
       } catch (refreshError) {
-        processQueue(refreshError, null);
+        processQueue(refreshError as AxiosError, null);
         setTimeout(() => {
           localStorage.clear();
           window.location.href = "/login";
@@ -137,6 +146,7 @@ api.interceptors.response.use(
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) {
+    config.headers = config.headers || {};
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;

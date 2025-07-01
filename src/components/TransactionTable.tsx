@@ -106,8 +106,8 @@ export default function TransactionTable({
         status,
         customSearch
       );
-      setData(res.data || []); // Đảm bảo data là mảng
-      setLastPage(res.meta?.lastPage ?? 1); // Xử lý meta không tồn tại
+      setData(res.data || []);
+      setLastPage(res?.lastPage ?? 1);
     } catch (err) {
       console.error("Fetch failed:", err);
       setData([]);
@@ -228,7 +228,11 @@ export default function TransactionTable({
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
             />
-            <Button className="w-[200px] bg-gray-100" type="submit">
+            <Button
+              className="w-[200px] bg-gray-100"
+              type="submit"
+              // disabled={searchInput.trim() === ""}
+            >
               Tìm kiếm
             </Button>
           </form>
