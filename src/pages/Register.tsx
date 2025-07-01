@@ -16,6 +16,13 @@ import {
 } from "../components/ui/form";
 import { LockKeyhole, LockKeyholeOpen } from "lucide-react";
 import { toast } from "sonner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
 
 const FormSchema = z
   .object({
@@ -30,6 +37,7 @@ const FormSchema = z
       .string()
       .trim()
       .min(6, { message: "Mật khẩu xác nhận phải đủ 6 ký tự" }),
+    role: z.string().trim().min(1, { message: "Vui lòng chọn vai trò" }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     path: ["confirmPassword"],
@@ -49,6 +57,7 @@ export default function RegisterPage() {
       lastName: "",
       password: "",
       confirmPassword: "",
+      role: "GDV_TTQT",
     },
   });
 
@@ -58,6 +67,7 @@ export default function RegisterPage() {
       firstName: data.firstName.trim(),
       lastName: data.lastName.trim(),
       password: data.password.trim(),
+      role: data.role.trim(),
     };
     try {
       await api.post("/auth/register", form);
@@ -85,7 +95,9 @@ export default function RegisterPage() {
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email</FormLabel>
+                <FormLabel>
+                  Email <span className="text-red-500">*</span>
+                </FormLabel>
                 <FormControl>
                   <Input
                     placeholder="Nhập email ...."
@@ -102,7 +114,9 @@ export default function RegisterPage() {
             name="firstName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Tên đầu tiên</FormLabel>
+                <FormLabel>
+                  Tên đầu tiên <span className="text-red-500">*</span>
+                </FormLabel>
                 <FormControl>
                   <Input placeholder="Nhập đầu tiên ...." {...field} />
                 </FormControl>
@@ -115,7 +129,9 @@ export default function RegisterPage() {
             name="lastName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Họ</FormLabel>
+                <FormLabel>
+                  Họ <span className="text-red-500">*</span>
+                </FormLabel>
                 <FormControl>
                   <Input placeholder="Nhập Họ ...." {...field} />
                 </FormControl>
@@ -128,7 +144,9 @@ export default function RegisterPage() {
             name="password"
             render={({ field }) => (
               <FormItem className="relative">
-                <FormLabel>Password</FormLabel>
+                <FormLabel>
+                  Mật khẩu <span className="text-red-500">*</span>
+                </FormLabel>
                 <FormControl>
                   <Input
                     placeholder="Nhập password ...."
@@ -155,7 +173,9 @@ export default function RegisterPage() {
             name="confirmPassword"
             render={({ field }) => (
               <FormItem className="relative">
-                <FormLabel>confirmPassword</FormLabel>
+                <FormLabel>
+                  Nhập lại mật khẩu <span className="text-red-500">*</span>
+                </FormLabel>
                 <FormControl>
                   <Input
                     placeholder="Nhập lại password ...."
@@ -173,6 +193,35 @@ export default function RegisterPage() {
                     <LockKeyhole className="w-5 h-5" />
                   )}
                 </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={formRegister.control}
+            name="role"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>
+                  Vai trò <span className="text-red-500">*</span>
+                </FormLabel>
+                <FormControl>
+                  <Select
+                    value={field.value}
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                    }}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Chọn vai trò" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white">
+                      <SelectItem value="GDV_TTQT">GDV-TTQT</SelectItem>
+                      <SelectItem value="KSV_TTQT">KSV-TTQT</SelectItem>
+                      <SelectItem value="GDV_HK">GDV-HK</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
