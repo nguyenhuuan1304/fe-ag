@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
-import { fetchCustomer, fetchCustomersTransactionsSentEmail, uploadCustomerFile } from "../services/api";
+import {
+  fetchCustomer,
+  fetchCustomersTransactionsSentEmail,
+  uploadCustomerFile,
+} from "../services/api";
 import {
   Pagination,
   PaginationContent,
@@ -48,7 +52,11 @@ type CustomerResponse = {
   phone_number: string;
 };
 
-export default function CustomerTable({ isSendEmail = false }: { isSendEmail?: boolean }) {
+export default function CustomerTable({
+  isSendEmail = false,
+}: {
+  isSendEmail?: boolean;
+}) {
   const [data, setData] = useState<CustomerResponse[]>([]);
   const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
@@ -57,7 +65,10 @@ export default function CustomerTable({ isSendEmail = false }: { isSendEmail?: b
   const [dialogOpenEmail, setDialogOpenEmail] = useState(false);
   const [fileEmail, setFileEmail] = useState<File | null>(null);
 
-  const loadDataCustomer = async (pageNumber: number = 1, searchInput: string = '') => {
+  const loadDataCustomer = async (
+    pageNumber: number = 1,
+    searchInput: string = ""
+  ) => {
     try {
       const res = isSendEmail
         ? await fetchCustomersTransactionsSentEmail(
@@ -68,7 +79,7 @@ export default function CustomerTable({ isSendEmail = false }: { isSendEmail?: b
           )
         : await fetchCustomer(pageNumber, 10, searchInput);
       setData(res.customers || []);
-      setLastPage(res.meta?.lastPage ?? 1);
+      setLastPage(res.lastPage ?? 1);
     } catch (err) {
       console.error("Fetch failed:", err);
       setData([]);
