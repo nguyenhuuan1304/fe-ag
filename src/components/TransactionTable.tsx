@@ -5,6 +5,7 @@ import {
   fetchTransactionsUpdateById,
   GetTransactionsHK,
   reportExcel,
+  reportPostInspectionExcel,
   updateTransactionsHKUpdateById,
   updateTransactionsKSVUpdateById,
   uploadTransactionFile,
@@ -107,6 +108,9 @@ export default function TransactionTable({
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] =
     useState<Transaction | null>(null);
+  const [isLoadingExPostInspection, setIsLoadingExPostInspection] = useState<boolean>(false);
+  const [isLoadingExNotPostInspection, setIsLoadingExNotPostInspection] =
+    useState<boolean>(false);
   const [isLoadingEx, setIsLoadingEx] = useState<boolean>(false);
   const user = JSON.parse(localStorage.getItem("user") || "{}");
 
@@ -323,8 +327,47 @@ export default function TransactionTable({
     }
   };
 
-  const handleExNotYet = async () => {
-    console.log("Exporting not yet transactions...");
+  const handleExcelPostInspection = async (postInspection: boolean) => {
+    if (postInspection) {
+      setIsLoadingExPostInspection(true);
+    } else {
+      setIsLoadingExNotPostInspection(true);
+    }
+    try {
+      const response = await reportPostInspectionExcel(postInspection);
+
+      // Create a Blob from the response data
+      const blob = new Blob([response.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+
+      // Create a temporary URL for the Blob
+      const url = window.URL.createObjectURL(blob);
+      const postInspectionText = postInspection
+        ? "Đã hậu kiểm"
+        : "Chưa hậu kiểm";
+
+      // Create a temporary link element to trigger the download
+      const link = document.createElement("a");
+      link.href = url;
+      const now = new Date();
+      const formattedDate = now
+        .toLocaleDateString("vi-VN")
+        .split("/")
+        .join("-");
+      link.download = `report-${postInspectionText}-${formattedDate}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+
+      // Clean up
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Export error:", err);
+    } finally {
+      setIsLoadingExPostInspection(false);
+      setIsLoadingExNotPostInspection(false);
+    }
   };
 
   return (
@@ -359,8 +402,11 @@ export default function TransactionTable({
           )}
           {user.role === "GDV_HK" && (
             <div className="flex gap-2">
-              <Button onClick={handleExNotYet} className="bg-gray-100">
-                {isLoadingEx ? (
+              <Button
+                onClick={() => handleExcelPostInspection(true)}
+                className="bg-gray-100"
+              >
+                {isLoadingExPostInspection ? (
                   <div className="flex items-center">
                     <Loader2 className="animate-spin h-4 w-4" />
                     <span className="ml-2">Đang xuất excel...</span>
@@ -369,8 +415,11 @@ export default function TransactionTable({
                   "Xuất excel hậu kiểm"
                 )}
               </Button>
-              <Button onClick={handleExNotYet} className="bg-gray-100">
-                {isLoadingEx ? (
+              <Button
+                onClick={() => handleExcelPostInspection(false)}
+                className="bg-gray-100"
+              >
+                {isLoadingExNotPostInspection ? (
                   <div className="flex items-center">
                     <Loader2 className="animate-spin h-4 w-4" />
                     <span className="ml-2">Đang xuất excel...</span>
