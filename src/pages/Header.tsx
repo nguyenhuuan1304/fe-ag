@@ -1,4 +1,4 @@
-import { LockKeyhole, LockKeyholeOpen, LogOut } from "lucide-react";
+import { LockKeyhole, LockKeyholeOpen, LogOut, UserPlus } from "lucide-react";
 import Logo from "../assets/agribank.png";
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
 import {
@@ -100,7 +100,7 @@ export default function Header() {
   return (
     <header className="bg-gray-100 shadow p-4 flex sticky top-0 z-50 w-full">
       <div className="flex items-center max-w-7xl w-full mx-auto justify-between">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/")}>
           <img
             src={Logo}
             alt="Agribank Logo"
@@ -264,6 +264,7 @@ export default function Header() {
                   onClick={() => navigate("/register")}
                 >
                   <span className="font-semibold">Đăng ký</span>
+                  <UserPlus className="w-5 h-5 text-blue-600" />
                 </div>
               )}
               <div

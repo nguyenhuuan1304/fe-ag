@@ -136,40 +136,42 @@ export default function CustomerTable({
           </form>
         </div>
         <div></div>
-        <div className="flex gap-2">
-          <Dialog open={dialogOpenEmail} onOpenChange={setDialogOpenEmail}>
-            <DialogTrigger asChild>
-              <Button
-                className="w-[200px] !bg-[#F97316] text-white"
-                onClick={() => setDialogOpenEmail(true)}
-              >
-                Upload Email Excel
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] bg-white">
-              <DialogHeader>
-                <DialogTitle>Upload Email Excel</DialogTitle>
-                <DialogDescription className="hidden"></DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4">
-                <Input
-                  type="file"
-                  accept=".xlsx,.xls"
-                  onChange={(e) => setFileEmail(e.target.files?.[0] || null)}
-                  className="w-full cursor-pointer"
-                />
-                <div className="flex justify-end">
-                  <Button
-                    onClick={handleUploadEmail}
-                    className="!bg-[#F97316] text-white"
-                  >
-                    Tải lên
-                  </Button>
+        {!isSendEmail && (
+          <div className="flex gap-2">
+            <Dialog open={dialogOpenEmail} onOpenChange={setDialogOpenEmail}>
+              <DialogTrigger asChild>
+                <Button
+                  className="w-[200px] !bg-[#F97316] text-white"
+                  onClick={() => setDialogOpenEmail(true)}
+                >
+                  Upload Email Excel
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px] bg-white">
+                <DialogHeader>
+                  <DialogTitle>Upload Email Excel</DialogTitle>
+                  <DialogDescription className="hidden"></DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4">
+                  <Input
+                    type="file"
+                    accept=".xlsx,.xls"
+                    onChange={(e) => setFileEmail(e.target.files?.[0] || null)}
+                    className="w-full cursor-pointer"
+                  />
+                  <div className="flex justify-end">
+                    <Button
+                      onClick={handleUploadEmail}
+                      className="!bg-[#F97316] text-white"
+                    >
+                      Tải lên
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        )}
       </div>
 
       {loading ? (

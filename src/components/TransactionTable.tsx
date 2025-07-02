@@ -108,7 +108,8 @@ export default function TransactionTable({
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] =
     useState<Transaction | null>(null);
-  const [isLoadingExPostInspection, setIsLoadingExPostInspection] = useState<boolean>(false);
+  const [isLoadingExPostInspection, setIsLoadingExPostInspection] =
+    useState<boolean>(false);
   const [isLoadingExNotPostInspection, setIsLoadingExNotPostInspection] =
     useState<boolean>(false);
   const [isLoadingEx, setIsLoadingEx] = useState<boolean>(false);
@@ -286,7 +287,7 @@ export default function TransactionTable({
       toast.success("Cập nhật thành công!");
       setEditDialogOpen(false);
       setSelectedTransaction(null);
-      await loadData(page, search);
+      await loadDataHK(page, search);
     } catch (error) {
       console.error("Error updating transaction:", error);
     }
@@ -400,73 +401,75 @@ export default function TransactionTable({
               )}
             </Button>
           )}
-          {["ADMIN", "GDV_HK"].includes(user?.role) && status === 'Đã bổ sung' && (
+          {["ADMIN", "GDV_HK"].includes(user?.role) &&
+            status === "Đã bổ sung" && (
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => handleExcelPostInspection(true)}
+                  className="bg-gray-100"
+                >
+                  {isLoadingExPostInspection ? (
+                    <div className="flex items-center">
+                      <Loader2 className="animate-spin h-4 w-4" />
+                      <span className="ml-2">Đang xuất excel...</span>
+                    </div>
+                  ) : (
+                    "Xuất excel hậu kiểm"
+                  )}
+                </Button>
+                <Button
+                  onClick={() => handleExcelPostInspection(false)}
+                  className="bg-gray-100"
+                >
+                  {isLoadingExNotPostInspection ? (
+                    <div className="flex items-center">
+                      <Loader2 className="animate-spin h-4 w-4" />
+                      <span className="ml-2">Đang xuất excel...</span>
+                    </div>
+                  ) : (
+                    "Xuất excel chưa hậu kiểm"
+                  )}
+                </Button>
+              </div>
+            )}
+        </div>
+        {["ADMIN", "GDV_TTQT"].includes(user?.role) &&
+          status === "Chưa bổ sung" && (
             <div className="flex gap-2">
-              <Button
-                onClick={() => handleExcelPostInspection(true)}
-                className="bg-gray-100"
-              >
-                {isLoadingExPostInspection ? (
-                  <div className="flex items-center">
-                    <Loader2 className="animate-spin h-4 w-4" />
-                    <span className="ml-2">Đang xuất excel...</span>
+              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    className="w-[200px] !bg-[#F97316] text-white"
+                    onClick={() => setDialogOpen(true)}
+                  >
+                    Upload IPCAS Excel
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px] bg-white">
+                  <DialogHeader>
+                    <DialogTitle>Upload IPCAS Excel</DialogTitle>
+                    <DialogDescription className="hidden"></DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4">
+                    <Input
+                      type="file"
+                      accept=".xlsx,.xls"
+                      onChange={(e) => setFile(e.target.files?.[0] || null)}
+                      className="w-full cursor-pointer"
+                    />
+                    <div className="flex justify-end">
+                      <Button
+                        onClick={handleUpload}
+                        className="!bg-[#F97316] text-white"
+                      >
+                        Tải lên
+                      </Button>
+                    </div>
                   </div>
-                ) : (
-                  "Xuất excel hậu kiểm"
-                )}
-              </Button>
-              <Button
-                onClick={() => handleExcelPostInspection(false)}
-                className="bg-gray-100"
-              >
-                {isLoadingExNotPostInspection ? (
-                  <div className="flex items-center">
-                    <Loader2 className="animate-spin h-4 w-4" />
-                    <span className="ml-2">Đang xuất excel...</span>
-                  </div>
-                ) : (
-                  "Xuất excel chưa hậu kiểm"
-                )}
-              </Button>
+                </DialogContent>
+              </Dialog>
             </div>
           )}
-        </div>
-        {["ADMIN", "GDV_TTQT"].includes(user?.role) && (
-          <div className="flex gap-2">
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                <Button
-                  className="w-[200px] !bg-[#F97316] text-white"
-                  onClick={() => setDialogOpen(true)}
-                >
-                  Upload IPCAS Excel
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px] bg-white">
-                <DialogHeader>
-                  <DialogTitle>Upload IPCAS Excel</DialogTitle>
-                  <DialogDescription className="hidden"></DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4">
-                  <Input
-                    type="file"
-                    accept=".xlsx,.xls"
-                    onChange={(e) => setFile(e.target.files?.[0] || null)}
-                    className="w-full cursor-pointer"
-                  />
-                  <div className="flex justify-end">
-                    <Button
-                      onClick={handleUpload}
-                      className="!bg-[#F97316] text-white"
-                    >
-                      Tải lên
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-        )}
       </div>
 
       {loading ? (
@@ -519,16 +522,42 @@ export default function TransactionTable({
                   <td className="p-2 w-[200px]">{tx.remark}</td>
                   <td className="p-2">{tx.document}</td>
                   {user?.role === "GDV_TTQT" && (
-                    <td className="p-2">{tx.status ?? "-"}</td>
+                    <td className="p-2 w-fit">
+                      <div
+                        className={`px-2 py-1 rounded-2xl w-fit ${
+                          tx.status === "Chưa bổ sung"
+                            ? "bg-red-500 text-white"
+                            : "bg-green-500 text-white"
+                        }`}
+                      >
+                        {tx.status ?? "-"}
+                      </div>
+                    </td>
                   )}
                   {user?.role === "KSV_TTQT" && (
                     <td className="p-2">
-                      {tx.censored ? "Đã kiểm duyệt" : "Chưa kiểm duyệt"}
+                      <div
+                        className={`px-2 py-1 rounded-2xl w-fit ${
+                          tx.censored
+                            ? "bg-green-500 text-white"
+                            : "bg-red-500 text-white"
+                        }`}
+                      >
+                        {tx.censored ? "Đã kiểm duyệt" : "Chưa kiểm duyệt"}
+                      </div>
                     </td>
                   )}
                   {user?.role === "GDV_HK" && (
                     <td className="p-2">
-                      {tx.post_inspection ? "Đã hậu kiểm" : "Chưa hậu kiểm"}
+                      <div
+                        className={`px-2 py-1 rounded-2xl w-fit ${
+                          tx.post_inspection
+                            ? "bg-green-500 text-white"
+                            : "bg-red-500 text-white"
+                        }`}
+                      >
+                        {tx.post_inspection ? "Đã hậu kiểm" : "Chưa hậu kiểm"}
+                      </div>
                     </td>
                   )}
                   <td className="p-2">{tx.expected_declaration_date ?? "-"}</td>
@@ -564,7 +593,7 @@ export default function TransactionTable({
                           </DialogTitle>
                           <DialogDescription className="flex flex-col mt-6 gap-4"></DialogDescription>
                         </DialogHeader>
-                        {user?.role === "GDV_TTQT" && (
+                        {["ADMIN", "GDV_TTQT"].includes(user?.role) && (
                           <div className="grid gap-4">
                             <Form {...form}>
                               <form
@@ -842,7 +871,7 @@ export default function TransactionTable({
               ))}
               {data.length === 0 && (
                 <tr>
-                  <td colSpan={10} className="text-center p-4 text-gray-500">
+                  <td colSpan={13} className="text-center p-4 text-gray-500">
                     Không có dữ liệu khách hàng.
                   </td>
                 </tr>
