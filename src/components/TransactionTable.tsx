@@ -3,6 +3,7 @@ import {
   fetchTransactionsById,
   fetchTransactionsNotYet,
   fetchTransactionsUpdateById,
+  GetTransactionsHK,
   reportExcel,
   updateTransactionsHKUpdateById,
   updateTransactionsKSVUpdateById,
@@ -156,9 +157,28 @@ export default function TransactionTable({
     }
   };
 
+  const loadDataHK = async (customPage = page, customSearch = search) => {
+    setLoading(true);
+    try {
+      const res = await GetTransactionsHK(customPage, 10, customSearch);
+      setData(res.data || []);
+      setLastPage(res?.lastPage ?? 1);
+    } catch (err) {
+      console.error("Fetch failed:", err);
+      setData([]);
+      setLastPage(1);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Initial load (only once)
   useEffect(() => {
-    loadData();
+    if (user?.role === "GDV_HK") {
+      loadDataHK();
+    } else {
+      loadData();
+    }
   }, []);
 
   // File upload handler

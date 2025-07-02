@@ -25,6 +25,17 @@ export const fetchTransactionsNotYet = async (
   return res.data;
 };
 
+export const GetTransactionsHK = async (
+  page: number,
+  limit: number,
+  search: string
+) => {
+  const res = await axios.get(`/transactions/hk/status`, {
+    params: { page, limit, search },
+  });
+  return res.data;
+};
+
 export const fetchCustomer = async (
   page: number,
   pageSize: number,
