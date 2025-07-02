@@ -63,6 +63,8 @@ type Transaction = {
   trref: string;
   updated_at: string | null;
   updated_by: string | null;
+  additional_date: string | null;
+  document: string;
 };
 
 const FormSchema = z.object({
@@ -299,8 +301,15 @@ export default function TransactionTable({
                 <th className="text-left p-2">Loại tiền</th>
                 <th className="text-left p-2">Ngày giao dịch</th>
                 <th className="text-left p-2 w-[200px]">Remark</th>
+                <th className="text-left p-2">Chứng từ cần bổ sung</th>
                 <th className="text-left p-2">Trạng thái</th>
-                <th className="text-left p-2">Ngày nhận hàng dự kiến</th>
+                <th className="text-left p-2 whitespace-normal">
+                  Ngày nhận <br /> hàng dự kiến
+                </th>
+                <th className="text-left p-2 whitespace-normal">
+                  Ngày bổ sung
+                  <br /> chứng từ dự kiến
+                </th>
                 <th className="text-left p-2">Ghi chú</th>
                 <th className="text-left p-2"></th>
               </tr>
@@ -315,8 +324,10 @@ export default function TransactionTable({
                   <td className="p-2">{tx.currency}</td>
                   <td className="p-2">{tx.tradate}</td>
                   <td className="p-2 w-[200px]">{tx.remark}</td>
+                  <td className="p-2">{tx.document}</td>
                   <td className="p-2">{tx.status ?? "-"}</td>
                   <td className="p-2">{tx.expected_declaration_date ?? "-"}</td>
+                  <td className="p-2">{tx.additional_date}</td>
                   <td className="p-2">{tx.note ?? "-"}</td>
                   <td className="p-2">
                     <Dialog

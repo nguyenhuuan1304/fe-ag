@@ -8,15 +8,28 @@ import CustomerTable from "./CustomerTable";
 import TransactionTable from "./TransactionTable";
 
 export function TabsHeader() {
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  console.log("user", user);
+
   return (
     <div className="flex w-full flex-col gap-6">
       <Tabs defaultValue="unsubmitted" className="gap-6">
         <TabsList className="flex gap-2">
-          <TabsTrigger value="unsubmitted">Báo cáo chưa bổ sung</TabsTrigger>
+          {user?.role === "GDV_TTQT" && (
+            <TabsTrigger value="unsubmitted">Báo cáo chưa bổ sung</TabsTrigger>
+          )}
           <TabsTrigger value="submitted">Đã bổ sung</TabsTrigger>
-          <TabsTrigger value="overdue">Báo cáo quá hạn</TabsTrigger>
-          <TabsTrigger value="notSendMailList">Danh sách chưa gửi mail</TabsTrigger>
-          <TabsTrigger value="sentMailList">Danh sách đã gửi mail</TabsTrigger>
+          {user?.role === "GDV_TTQT" && (
+            <>
+              <TabsTrigger value="overdue">Báo cáo quá hạn</TabsTrigger>
+              <TabsTrigger value="notSendMailList">
+                Danh sách chưa gửi mail
+              </TabsTrigger>
+              <TabsTrigger value="sentMailList">
+                Danh sách đã gửi mail
+              </TabsTrigger>
+            </>
+          )}
         </TabsList>
         <TabsContent value="unsubmitted">
           <TransactionTable status="Chưa bổ sung" />
