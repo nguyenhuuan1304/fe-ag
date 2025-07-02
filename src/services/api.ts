@@ -48,7 +48,6 @@ export const fetchCustomersTransactionsSentEmail = async (
   return res.data;
 };
 
-
 export const fetchTransactionsOverdue = async (
   page: number,
   limit: number,
@@ -75,6 +74,44 @@ export const fetchTransactionsUpdateById = async (
     const res = await axios.put(`/transactions/${id}`, {
       status,
       note,
+    });
+    return res.data;
+  } catch (error) {
+    console.error("Error updating transaction:", error);
+    throw error;
+  }
+};
+
+export const updateTransactionsKSVUpdateById = async (
+  id: number,
+  status: string,
+  censored: boolean,
+  note: string
+) => {
+  try {
+    const res = await axios.put(`/transactions/ksv/${id}`, {
+      status,
+      censored,
+      note_censored: note,
+    });
+    return res.data;
+  } catch (error) {
+    console.error("Error updating transaction:", error);
+    throw error;
+  }
+};
+
+export const updateTransactionsHKUpdateById = async (
+  id: number,
+  status: string,
+  post_inspection: boolean,
+  note: string
+) => {
+  try {
+    const res = await axios.put(`/transactions/hk/${id}`, {
+      status,
+      post_inspection,
+      note_inspection: note,
     });
     return res.data;
   } catch (error) {

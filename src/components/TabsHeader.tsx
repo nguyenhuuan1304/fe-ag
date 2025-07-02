@@ -32,10 +32,10 @@ export function TabsHeader() {
             <>
               <TabsTrigger value="overdue">Báo cáo quá hạn</TabsTrigger>
               <TabsTrigger value="notSendMailList">
-                Danh sách chưa gửi mail
+                Danh sách chưa gửi email
               </TabsTrigger>
               <TabsTrigger value="sentMailList">
-                Danh sách đã gửi mail
+                Danh sách đã gửi email
               </TabsTrigger>
             </>
           )}
