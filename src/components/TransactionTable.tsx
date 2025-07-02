@@ -65,6 +65,8 @@ type Transaction = {
   updated_by: string | null;
   additional_date: string | null;
   document: string;
+  censored: boolean;
+  post_inspection: boolean;
 };
 
 const FormSchema = z.object({
@@ -89,6 +91,7 @@ export default function TransactionTable({
   const [selectedTransaction, setSelectedTransaction] =
     useState<Transaction | null>(null);
   const [isLoadingEx, setIsLoadingEx] = useState<boolean>(false);
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -220,6 +223,10 @@ export default function TransactionTable({
     }
   };
 
+  const handleExNotYet = async () => {
+    console.log("Exporting not yet transactions...");
+  };
+
   return (
     <div className="overflow-auto w-full mx-auto space-y-4">
       <div className="flex justify-between w-full">
@@ -250,41 +257,67 @@ export default function TransactionTable({
               )}
             </Button>
           )}
-        </div>
-        <div className="flex gap-2">
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button
-                className="w-[200px] !bg-[#F97316] text-white"
-                onClick={() => setDialogOpen(true)}
-              >
-                Upload IPCAS Excel
+          {user.role === "GDV_HK" && (
+            <div className="flex gap-2">
+              <Button onClick={handleExNotYet} className="bg-gray-100">
+                {isLoadingEx ? (
+                  <div className="flex items-center">
+                    <Loader2 className="animate-spin h-4 w-4" />
+                    <span className="ml-2">Đang xuất excel...</span>
+                  </div>
+                ) : (
+                  "Xuất excel hậu kiểm"
+                )}
               </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] bg-white">
-              <DialogHeader>
-                <DialogTitle>Upload IPCAS Excel</DialogTitle>
-                <DialogDescription className="hidden"></DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4">
-                <Input
-                  type="file"
-                  accept=".xlsx,.xls"
-                  onChange={(e) => setFile(e.target.files?.[0] || null)}
-                  className="w-full cursor-pointer"
-                />
-                <div className="flex justify-end">
-                  <Button
-                    onClick={handleUpload}
-                    className="!bg-[#F97316] text-white"
-                  >
-                    Tải lên
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+              <Button onClick={handleExNotYet} className="bg-gray-100">
+                {isLoadingEx ? (
+                  <div className="flex items-center">
+                    <Loader2 className="animate-spin h-4 w-4" />
+                    <span className="ml-2">Đang xuất excel...</span>
+                  </div>
+                ) : (
+                  "Xuất excel chưa hậu kiểm"
+                )}
+              </Button>
+            </div>
+          )}
         </div>
+        {user?.role === "GDV_TTQT" && (
+          <div className="flex gap-2">
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  className="w-[200px] !bg-[#F97316] text-white"
+                  onClick={() => setDialogOpen(true)}
+                >
+                  Upload IPCAS Excel
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px] bg-white">
+                <DialogHeader>
+                  <DialogTitle>Upload IPCAS Excel</DialogTitle>
+                  <DialogDescription className="hidden"></DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4">
+                  <Input
+                    type="file"
+                    accept=".xlsx,.xls"
+                    onChange={(e) => setFile(e.target.files?.[0] || null)}
+                    className="w-full cursor-pointer"
+                  />
+                  <div className="flex justify-end">
+                    <Button
+                      onClick={handleUpload}
+                      className="!bg-[#F97316] text-white"
+                    >
+                      Tải lên
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        )}
       </div>
 
       {loading ? (
@@ -301,8 +334,19 @@ export default function TransactionTable({
                 <th className="text-left p-2">Loại tiền</th>
                 <th className="text-left p-2">Ngày giao dịch</th>
                 <th className="text-left p-2 w-[200px]">Remark</th>
-                <th className="text-left p-2">Chứng từ cần bổ sung</th>
-                <th className="text-left p-2">Trạng thái</th>
+                <th className="text-left p-2">
+                  Chứng từ
+                  <br /> cần bổ sung
+                </th>
+                {user?.role === "GDV_TTQT" && (
+                  <th className="text-left p-2">Trạng thái</th>
+                )}
+                {user?.role === "KSV_TTQT" && (
+                  <th className="text-left p-2">Kiểm duyệt</th>
+                )}
+                {user?.role === "GDV_HK" && (
+                  <th className="text-left p-2">Hậu duyệt</th>
+                )}
                 <th className="text-left p-2 whitespace-normal">
                   Ngày nhận <br /> hàng dự kiến
                 </th>
@@ -325,7 +369,19 @@ export default function TransactionTable({
                   <td className="p-2">{tx.tradate}</td>
                   <td className="p-2 w-[200px]">{tx.remark}</td>
                   <td className="p-2">{tx.document}</td>
-                  <td className="p-2">{tx.status ?? "-"}</td>
+                  {user?.role === "GDV_TTQT" && (
+                    <td className="p-2">{tx.status ?? "-"}</td>
+                  )}
+                  {user?.role === "KSV_TTQT" && (
+                    <td className="p-2">
+                      {tx.censored ? "Đã kiểm duyệt" : "Chưa kiểm duyệt"}
+                    </td>
+                  )}
+                  {user?.role === "GDV_HK" && (
+                    <td className="p-2">
+                      {tx.censored ? "Đã hậu kiểm" : "Chưa hậu kiểm"}
+                    </td>
+                  )}
                   <td className="p-2">{tx.expected_declaration_date ?? "-"}</td>
                   <td className="p-2">{tx.additional_date}</td>
                   <td className="p-2">{tx.note ?? "-"}</td>
