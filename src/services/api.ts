@@ -129,6 +129,17 @@ export const reportExcel = async (status: string) => {
   return res;
 };
 
+export const reportPostInspectionExcel = async (postInspection: boolean) => {
+  const res: AxiosResponse = await axios.get(
+    "/transactions/export/post-inspection",
+    {
+      params: { postInspection },
+      responseType: "blob",
+    }
+  );
+  return res;
+};
+
 export const login = async (data: { email: string; password: string }) => {
   const response = await axios.post("/auth/login", data);
   return response.data;
