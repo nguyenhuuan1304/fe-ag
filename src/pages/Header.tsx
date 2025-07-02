@@ -62,6 +62,7 @@ export default function Header() {
   const [showPasswordOld, setShowPasswordOld] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
+  const isAdmin = user?.role === "ADMIN";
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -257,6 +258,14 @@ export default function Header() {
                   </div>
                 </DialogContent>
               </Dialog>
+              {isAdmin && (
+                <div
+                  className="cursor-pointer flex items-center gap-4 justify-between"
+                  onClick={() => navigate("/register")}
+                >
+                  <span className="font-semibold">Đăng ký</span>
+                </div>
+              )}
               <div
                 className="cursor-pointer flex items-center gap-4 justify-between"
                 onClick={logout}

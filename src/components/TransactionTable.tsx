@@ -400,7 +400,7 @@ export default function TransactionTable({
               )}
             </Button>
           )}
-          {user.role === "GDV_HK" && (
+          {["ADMIN", "GDV_HK"].includes(user?.role) && status === 'Đã bổ sung' && (
             <div className="flex gap-2">
               <Button
                 onClick={() => handleExcelPostInspection(true)}
@@ -431,7 +431,7 @@ export default function TransactionTable({
             </div>
           )}
         </div>
-        {user?.role === "GDV_TTQT" && (
+        {["ADMIN", "GDV_TTQT"].includes(user?.role) && (
           <div className="flex gap-2">
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>

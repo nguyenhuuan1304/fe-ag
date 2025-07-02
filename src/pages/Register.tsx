@@ -48,6 +48,13 @@ export default function RegisterPage() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const isAdmin = user?.role === "ADMIN";
+
+  if (!isAdmin) {
+    // If the user is not an admin, redirect to the dashboard
+    navigate("/");
+  }
 
   const formRegister = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
