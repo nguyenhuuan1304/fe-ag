@@ -4,6 +4,8 @@ import {
   fetchTransactionsNotYet,
   fetchTransactionsUpdateById,
   reportExcel,
+  updateTransactionsHKUpdateById,
+  updateTransactionsKSVUpdateById,
   uploadTransactionFile,
 } from "../services/api";
 import {
@@ -57,6 +59,8 @@ type Transaction = {
   id: number;
   is_document_added: boolean;
   note: string | null;
+  note_censored: string | null;
+  note_inspection: string | null;
   remark: string;
   status: string | null;
   tradate: string;
@@ -71,6 +75,18 @@ type Transaction = {
 
 const FormSchema = z.object({
   status: z.string().trim().min(1, { message: "status là bắt buộc" }),
+  note: z.string().trim().optional(),
+});
+
+const FormSchemaKSV = z.object({
+  status: z.string().trim().min(1, { message: "status là bắt buộc" }),
+  censored: z.boolean(),
+  note: z.string().trim().optional(),
+});
+
+const FormSchemaHK = z.object({
+  status: z.string().trim().min(1, { message: "status là bắt buộc" }),
+  post_inspection: z.boolean(),
   note: z.string().trim().optional(),
 });
 
@@ -97,6 +113,24 @@ export default function TransactionTable({
     resolver: zodResolver(FormSchema),
     defaultValues: {
       status: "",
+      note: "",
+    },
+  });
+
+  const formKSV = useForm<z.infer<typeof FormSchemaKSV>>({
+    resolver: zodResolver(FormSchemaKSV),
+    defaultValues: {
+      status: "",
+      censored: false,
+      note: "",
+    },
+  });
+
+  const formHK = useForm<z.infer<typeof FormSchemaHK>>({
+    resolver: zodResolver(FormSchemaHK),
+    defaultValues: {
+      status: "",
+      post_inspection: false,
       note: "",
     },
   });
@@ -165,6 +199,16 @@ export default function TransactionTable({
         status: res.status || "",
         note: res.note || "",
       });
+      formKSV.reset({
+        status: res.status || "",
+        censored: res.censored || false,
+        note: res.note_censored || "",
+      });
+      formHK.reset({
+        status: res.status || "",
+        post_inspection: res.post_inspection || false,
+        note: res.note_inspection || "",
+      });
     } catch (err) {
       console.error("Fetch failed:", err);
     }
@@ -177,6 +221,42 @@ export default function TransactionTable({
       await fetchTransactionsUpdateById(
         selectedTransaction.id,
         data.status,
+        data.note || ""
+      );
+      toast.success("Cập nhật thành công!");
+      setEditDialogOpen(false);
+      setSelectedTransaction(null);
+      await loadData(page, search);
+    } catch (error) {
+      console.error("Error updating transaction:", error);
+    }
+  };
+
+  const onSubmitKSV = async (data: z.infer<typeof FormSchemaKSV>) => {
+    if (!selectedTransaction) return;
+    try {
+      await updateTransactionsKSVUpdateById(
+        selectedTransaction.id,
+        data.status,
+        data.censored,
+        data.note || ""
+      );
+      toast.success("Cập nhật thành công!");
+      setEditDialogOpen(false);
+      setSelectedTransaction(null);
+      await loadData(page, search);
+    } catch (error) {
+      console.error("Error updating transaction:", error);
+    }
+  };
+
+  const onSubmitHK = async (data: z.infer<typeof FormSchemaHK>) => {
+    if (!selectedTransaction) return;
+    try {
+      await updateTransactionsHKUpdateById(
+        selectedTransaction.id,
+        data.status,
+        data.post_inspection,
         data.note || ""
       );
       toast.success("Cập nhật thành công!");
@@ -379,12 +459,20 @@ export default function TransactionTable({
                   )}
                   {user?.role === "GDV_HK" && (
                     <td className="p-2">
-                      {tx.censored ? "Đã hậu kiểm" : "Chưa hậu kiểm"}
+                      {tx.post_inspection ? "Đã hậu kiểm" : "Chưa hậu kiểm"}
                     </td>
                   )}
                   <td className="p-2">{tx.expected_declaration_date ?? "-"}</td>
                   <td className="p-2">{tx.additional_date}</td>
-                  <td className="p-2">{tx.note ?? "-"}</td>
+                  {user?.role === "GDV_TTQT" && (
+                    <td className="p-2">{tx.note ?? "-"}</td>
+                  )}
+                  {user?.role === "KSV_TTQT" && (
+                    <td className="p-2">{tx.note_censored ?? "-"}</td>
+                  )}
+                  {user?.role === "GDV_HK" && (
+                    <td className="p-2">{tx.note_inspection ?? "-"}</td>
+                  )}
                   <td className="p-2">
                     <Dialog
                       open={editDialogOpen}
@@ -407,68 +495,277 @@ export default function TransactionTable({
                           </DialogTitle>
                           <DialogDescription className="flex flex-col mt-6 gap-4"></DialogDescription>
                         </DialogHeader>
-                        <div className="grid gap-4">
-                          <Form {...form}>
-                            <form
-                              onSubmit={form.handleSubmit(onSubmit)}
-                              className="w-full space-y-6"
-                            >
-                              <FormField
-                                control={form.control}
-                                name="status"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>
-                                      Status{" "}
-                                      <span className="text-red-500">*</span>
-                                    </FormLabel>
-                                    <FormControl>
-                                      <Select
-                                        value={field.value}
-                                        onValueChange={(value) => {
-                                          field.onChange(value);
-                                        }}
-                                      >
-                                        <SelectTrigger className="w-full">
-                                          <SelectValue placeholder="Chọn trạng thái" />
-                                        </SelectTrigger>
-                                        <SelectContent className="bg-white">
-                                          <SelectItem value="Chưa bổ sung">
-                                            Chưa bổ sung
-                                          </SelectItem>
-                                          <SelectItem value="Đã bổ sung">
-                                            Đã bổ sung
-                                          </SelectItem>
-                                        </SelectContent>
-                                      </Select>
-                                    </FormControl>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              <FormField
-                                control={form.control}
-                                name="note"
-                                render={({ field }) => (
-                                  <FormItem className="relative">
-                                    <FormLabel>Note</FormLabel>
-                                    <FormControl>
-                                      <Textarea
-                                        {...field}
-                                        placeholder="Nhập ghi chú ..."
-                                      />
-                                    </FormControl>
-                                  </FormItem>
-                                )}
-                              />
-                              <div className="flex justify-center items-center">
-                                <Button type="submit" className="bg-gray-200">
-                                  Lưu
-                                </Button>
-                              </div>
-                            </form>
-                          </Form>
-                        </div>
+                        {user?.role === "GDV_TTQT" && (
+                          <div className="grid gap-4">
+                            <Form {...form}>
+                              <form
+                                onSubmit={form.handleSubmit(onSubmit)}
+                                className="w-full space-y-6"
+                              >
+                                <FormField
+                                  control={form.control}
+                                  name="status"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>
+                                        Status{" "}
+                                        <span className="text-red-500">*</span>
+                                      </FormLabel>
+                                      <FormControl>
+                                        <Select
+                                          value={field.value}
+                                          onValueChange={(value) => {
+                                            field.onChange(value);
+                                          }}
+                                        >
+                                          <SelectTrigger className="w-full">
+                                            <SelectValue placeholder="Chọn trạng thái" />
+                                          </SelectTrigger>
+                                          <SelectContent className="bg-white">
+                                            <SelectItem value="Chưa bổ sung">
+                                              Chưa bổ sung
+                                            </SelectItem>
+                                            <SelectItem value="Đã bổ sung">
+                                              Đã bổ sung
+                                            </SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                <FormField
+                                  control={form.control}
+                                  name="note"
+                                  render={({ field }) => (
+                                    <FormItem className="relative">
+                                      <FormLabel>Note</FormLabel>
+                                      <FormControl>
+                                        <Textarea
+                                          {...field}
+                                          placeholder="Nhập ghi chú ..."
+                                        />
+                                      </FormControl>
+                                    </FormItem>
+                                  )}
+                                />
+                                <div className="flex justify-center items-center">
+                                  <Button type="submit" className="bg-gray-200">
+                                    Lưu
+                                  </Button>
+                                </div>
+                              </form>
+                            </Form>
+                          </div>
+                        )}
+                        {user?.role === "KSV_TTQT" && (
+                          <div className="grid gap-4">
+                            <Form {...formKSV}>
+                              <form
+                                onSubmit={formKSV.handleSubmit(onSubmitKSV)}
+                                className="w-full space-y-6"
+                              >
+                                <FormField
+                                  control={formKSV.control}
+                                  name="censored"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>
+                                        Kiểm duyệt{" "}
+                                        <span className="text-red-500">*</span>
+                                      </FormLabel>
+                                      <FormControl>
+                                        <Select
+                                          value={
+                                            field.value
+                                              ? "Đã kiểm duyệt"
+                                              : "Chưa kiểm duyệt"
+                                          }
+                                          onValueChange={(value) => {
+                                            field.onChange(
+                                              value === "Đã kiểm duyệt"
+                                            );
+                                          }}
+                                        >
+                                          <SelectTrigger className="w-full">
+                                            <SelectValue placeholder="Chọn trạng thái" />
+                                          </SelectTrigger>
+                                          <SelectContent className="bg-white">
+                                            <SelectItem value="Chưa kiểm duyệt">
+                                              Chưa kiểm duyệt
+                                            </SelectItem>
+                                            <SelectItem value="Đã kiểm duyệt">
+                                              Đã kiểm duyệt
+                                            </SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                <FormField
+                                  control={formKSV.control}
+                                  name="status"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>
+                                        Status{" "}
+                                        <span className="text-red-500">*</span>
+                                      </FormLabel>
+                                      <FormControl>
+                                        <Select
+                                          value={field.value}
+                                          onValueChange={(value) => {
+                                            field.onChange(value);
+                                          }}
+                                        >
+                                          <SelectTrigger className="w-full">
+                                            <SelectValue placeholder="Chọn trạng thái" />
+                                          </SelectTrigger>
+                                          <SelectContent className="bg-white">
+                                            <SelectItem value="Chưa bổ sung">
+                                              Chưa bổ sung
+                                            </SelectItem>
+                                            <SelectItem value="Đã bổ sung">
+                                              Đã bổ sung
+                                            </SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                <FormField
+                                  control={formKSV.control}
+                                  name="note"
+                                  render={({ field }) => (
+                                    <FormItem className="relative">
+                                      <FormLabel>Note</FormLabel>
+                                      <FormControl>
+                                        <Textarea
+                                          {...field}
+                                          placeholder="Nhập ghi chú ..."
+                                        />
+                                      </FormControl>
+                                    </FormItem>
+                                  )}
+                                />
+                                <div className="flex justify-center items-center">
+                                  <Button type="submit" className="bg-gray-200">
+                                    Lưu
+                                  </Button>
+                                </div>
+                              </form>
+                            </Form>
+                          </div>
+                        )}
+                        {user?.role === "GDV_HK" && (
+                          <div className="grid gap-4">
+                            <Form {...formHK}>
+                              <form
+                                onSubmit={formHK.handleSubmit(onSubmitHK)}
+                                className="w-full space-y-6"
+                              >
+                                <FormField
+                                  control={formHK.control}
+                                  name="post_inspection"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>
+                                        Hậu kiểm{" "}
+                                        <span className="text-red-500">*</span>
+                                      </FormLabel>
+                                      <FormControl>
+                                        <Select
+                                          value={
+                                            field.value
+                                              ? "Đã hậu kiểm"
+                                              : "Chưa hậu kiểm"
+                                          }
+                                          onValueChange={(value) => {
+                                            field.onChange(
+                                              value === "Đã hậu kiểm"
+                                            );
+                                          }}
+                                        >
+                                          <SelectTrigger className="w-full">
+                                            <SelectValue placeholder="Chọn trạng thái" />
+                                          </SelectTrigger>
+                                          <SelectContent className="bg-white">
+                                            <SelectItem value="Chưa hậu kiểm">
+                                              Chưa hậu kiểm
+                                            </SelectItem>
+                                            <SelectItem value="Đã hậu kiểm">
+                                              Đã hậu kiểm
+                                            </SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                <FormField
+                                  control={formHK.control}
+                                  name="status"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>
+                                        Status{" "}
+                                        <span className="text-red-500">*</span>
+                                      </FormLabel>
+                                      <FormControl>
+                                        <Select
+                                          value={field.value}
+                                          onValueChange={(value) => {
+                                            field.onChange(value);
+                                          }}
+                                          disabled={true}
+                                        >
+                                          <SelectTrigger className="w-full">
+                                            <SelectValue placeholder="Chọn trạng thái" />
+                                          </SelectTrigger>
+                                          <SelectContent className="bg-white">
+                                            <SelectItem value="Chưa bổ sung">
+                                              Chưa bổ sung
+                                            </SelectItem>
+                                            <SelectItem value="Đã bổ sung">
+                                              Đã bổ sung
+                                            </SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                <FormField
+                                  control={formHK.control}
+                                  name="note"
+                                  render={({ field }) => (
+                                    <FormItem className="relative">
+                                      <FormLabel>Note</FormLabel>
+                                      <FormControl>
+                                        <Textarea
+                                          {...field}
+                                          placeholder="Nhập ghi chú ..."
+                                        />
+                                      </FormControl>
+                                    </FormItem>
+                                  )}
+                                />
+                                <div className="flex justify-center items-center">
+                                  <Button type="submit" className="bg-gray-200">
+                                    Lưu
+                                  </Button>
+                                </div>
+                              </form>
+                            </Form>
+                          </div>
+                        )}
                       </DialogContent>
                     </Dialog>
                   </td>
