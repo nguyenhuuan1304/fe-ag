@@ -141,7 +141,7 @@ export default function CustomerTable({
             <Dialog open={dialogOpenEmail} onOpenChange={setDialogOpenEmail}>
               <DialogTrigger asChild>
                 <Button
-                  className="w-[200px] !bg-[#F97316] text-white"
+                  className="w-[200px] !bg-[#af1b3f] text-white"
                   onClick={() => setDialogOpenEmail(true)}
                 >
                   Upload Email Excel
@@ -162,7 +162,7 @@ export default function CustomerTable({
                   <div className="flex justify-end">
                     <Button
                       onClick={handleUploadEmail}
-                      className="!bg-[#F97316] text-white"
+                      className="!bg-[#af1b3f] text-white"
                     >
                       Tải lên
                     </Button>

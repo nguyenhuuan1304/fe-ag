@@ -439,7 +439,7 @@ export default function TransactionTable({
               <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogTrigger asChild>
                   <Button
-                    className="w-[200px] !bg-[#F97316] text-white"
+                    className="w-[200px] !bg-[#af1b3f] text-white"
                     onClick={() => setDialogOpen(true)}
                   >
                     Upload IPCAS Excel
@@ -460,7 +460,7 @@ export default function TransactionTable({
                     <div className="flex justify-end">
                       <Button
                         onClick={handleUpload}
-                        className="!bg-[#F97316] text-white"
+                        className="!bg-[#af1b3f] text-white"
                       >
                         Tải lên
                       </Button>
