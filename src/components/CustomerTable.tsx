@@ -21,6 +21,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "./ui/dialog";
+import { toast } from "sonner";
 
 type Transaction = {
   amount: string;
@@ -102,8 +103,10 @@ export default function CustomerTable({
       await loadDataCustomer();
       setDialogOpenEmail(false);
       setFileEmail(null);
+      toast.success("Tải lên thành công");
     } catch (error) {
       console.error("Upload failed:", error);
+      toast.error("Tải lên thất bại. Vui lòng thử lại.");
     }
   };
 
@@ -122,7 +125,7 @@ export default function CustomerTable({
 
   return (
     <div className="overflow-auto w-full mx-auto space-y-4">
-      <div className="flex justify-between w-full">
+      <div className="flex justify-start gap-4 w-full">
         <div className="flex items-center gap-4">
           <form onSubmit={handleSearchSubmit} className="flex gap-2 max-w-md">
             <Input
@@ -184,7 +187,7 @@ export default function CustomerTable({
                 <th className="text-left p-2">Mã khách hàng</th>
                 <th className="text-left p-2">Tên khách hàng</th>
                 <th className="text-left p-2">Tên người liên hệ</th>
-                <th className="text-left p-2">email</th>
+                <th className="text-left p-2">Email</th>
               </tr>
             </thead>
             <tbody>

@@ -194,6 +194,7 @@ export default function TransactionTable({
       await loadData(1, ""); // reset to page 1 and no search
       setDialogOpen(false);
       setFile(null);
+      toast.success("Tải lên thành công");
     } catch (error) {
       console.error("Upload failed:", error);
       toast.error("Tải lên thất bại. Vui lòng thử lại.");
@@ -254,6 +255,7 @@ export default function TransactionTable({
       await loadData(page, search);
     } catch (error) {
       console.error("Error updating transaction:", error);
+      toast.error("Cập nhật thất bại. Vui lòng thử lại.");
     }
   };
 
@@ -272,6 +274,7 @@ export default function TransactionTable({
       await loadData(page, search);
     } catch (error) {
       console.error("Error updating transaction:", error);
+      toast.error("Cập nhật thất bại. Vui lòng thử lại.");
     }
   };
 
@@ -290,6 +293,7 @@ export default function TransactionTable({
       await loadDataHK(page, search);
     } catch (error) {
       console.error("Error updating transaction:", error);
+      toast.error("Cập nhật thất bại. Vui lòng thử lại.");
     }
   };
 
@@ -321,8 +325,10 @@ export default function TransactionTable({
       // Clean up
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
+      toast.success("Xuất excel thành công!");
     } catch (err) {
       console.error("Export error:", err);
+      toast.error("Xuất excel thất bại. Vui lòng thử lại.");
     } finally {
       setIsLoadingEx(false);
     }
@@ -363,8 +369,10 @@ export default function TransactionTable({
       // Clean up
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
+      toast.success("Xuất excel thành công!");
     } catch (err) {
       console.error("Export error:", err);
+      toast.error("Xuất excel thất bại. Vui lòng thử lại.");
     } finally {
       setIsLoadingExPostInspection(false);
       setIsLoadingExNotPostInspection(false);
@@ -373,7 +381,7 @@ export default function TransactionTable({
 
   return (
     <div className="overflow-auto w-full mx-auto space-y-4">
-      <div className="flex justify-between w-full">
+      <div className="flex justify-start gap-4 w-[1745px]">
         <div className="flex items-center gap-4">
           <form onSubmit={handleSearchSubmit} className="flex gap-2 max-w-md">
             <Input
@@ -476,7 +484,7 @@ export default function TransactionTable({
         <p>Vui lòng chờ...</p>
       ) : (
         <>
-          <table className="min-w-full text-sm border border-gray-200 rounded">
+          <table className="w-[1745px] text-sm border border-gray-200 rounded">
             <thead className="bg-gray-100">
               <tr>
                 <th className="text-left p-2">Số giao dịch</th>
