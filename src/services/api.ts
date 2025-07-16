@@ -202,3 +202,24 @@ export const register = async (data: {
   const response = await axios.post("/auth/register", data);
   return response.data;
 };
+
+export const getConfigEmail = async () => {
+  const response = await axios.get("/config-email");
+  return response.data;
+};
+
+export const addConfigEmail = async (data: {
+  email: string;
+  password: string;
+}) => {
+  const response = await axios.post("/config-email", data);
+  return response.data;
+};
+
+export const updateConfigEmail = async (id: number, data: {
+  email: string;
+  password: string;
+}) => {
+  const response = await axios.put(`/config-email/${id}`, data);
+  return response.data;
+};

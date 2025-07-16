@@ -1,4 +1,10 @@
-import { LockKeyhole, LockKeyholeOpen, LogOut, UserPlus } from "lucide-react";
+import {
+  LockKeyhole,
+  LockKeyholeOpen,
+  LogOut,
+  MailIcon,
+  UserPlus,
+} from "lucide-react";
 import Logo from "../assets/agribank.png";
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
 import {
@@ -32,6 +38,7 @@ import { Input } from "../components/ui/input";
 import api from "../lib/axios";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { addConfigEmail, getConfigEmail, updateConfigEmail } from "../services/api";
 
 const FormSchema = z
   .object({
@@ -53,6 +60,18 @@ const FormSchema = z
     message: "Mật khẩu xác nhận không khớp",
   });
 
+const FormConfigSchema = z.object({
+  email: z
+    .string({ required_error: "Email không được để trống" })
+    .trim()
+    .email({ message: "Vui lòng nhập đúng định dạng email" }),
+  password: z
+    .string({ required_error: "Mật khẩu không được để trống" })
+    .trim()
+    .min(16, { message: "Mật khẩu phải đủ 16 ký tự" })
+    .max(16, { message: "Mật khẩu phải đủ 16 ký tự" }),
+});
+
 export default function Header() {
   const { logout } = useAuth();
   const { token } = useAuth();
@@ -63,6 +82,26 @@ export default function Header() {
   const [showPassword, setShowPassword] = useState(false);
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
   const isAdmin = user?.role === "ADMIN";
+  const [openConfigDialog, setOpenConfigDialog] = useState(false);
+  const [configId, setConfigId] = useState(null);
+
+  const handleClickConfig = () => {
+    loadDataConfigEmail();
+    setOpenConfigDialog(true);
+  };
+
+  const loadDataConfigEmail = async () => {
+    try {
+      const res = await getConfigEmail();
+      formConfig.setValue("email", res.data[0]?.email || "");
+      formConfig.setValue("password", res.data[0]?.password || "");
+      setConfigId(res.data[0]?.id || null);
+    } catch (err) {
+      console.error("Fetch failed:", err);
+      formConfig.setValue("email", "");
+      formConfig.setValue("password", "");
+    }
+  };
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -72,6 +111,32 @@ export default function Header() {
       confirmPassword: "",
     },
   });
+
+  const formConfig = useForm<z.infer<typeof FormConfigSchema>>({
+    resolver: zodResolver(FormConfigSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
+
+  const onSubmitConfig = async (data: z.infer<typeof FormConfigSchema>) => {
+    const formData = {
+      email: data.email.trim(),
+      password: data.password.trim(),
+    };
+    try {
+      const res = configId ? await updateConfigEmail(configId, formData) : await addConfigEmail(formData);
+      toast.success(res.data.message || configId ? "Cập nhật cấu hình email thành công" : "Thêm cấu hình email thành công");
+      formConfig.setValue("email", "");
+      formConfig.setValue("password", "");
+      setOpenConfigDialog(false);
+      setConfigId(null);
+    } catch (error) {
+      console.error("Add failed:", error);
+      toast.error("Thêm cấu hình email thất bại, vui lòng thử lại!");
+    }
+  };
 
   const onSubmit = async (data: z.infer<typeof FormSchema>) => {
     const formData = {
@@ -100,7 +165,10 @@ export default function Header() {
   return (
     <header className="bg-gray-100 shadow p-4 flex sticky top-0 z-50 w-full">
       <div className="flex items-center max-w-7xl w-full mx-auto justify-between">
-        <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/")}>
+        <div
+          className="flex items-center gap-2 cursor-pointer"
+          onClick={() => navigate("/")}
+        >
           <img
             src={Logo}
             alt="Agribank Logo"
@@ -265,6 +333,76 @@ export default function Header() {
                 >
                   <span className="font-semibold">Đăng ký</span>
                   <UserPlus className="w-5 h-5 text-blue-600" />
+                </div>
+              )}
+              {isAdmin && (
+                <div>
+                  <div
+                    className="cursor-pointer flex items-center gap-4 justify-between"
+                    onClick={handleClickConfig}
+                  >
+                    <span className="font-semibold">Cấu hình</span>
+                    <MailIcon className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <Dialog
+                    open={openConfigDialog}
+                    onOpenChange={() => setOpenConfigDialog(false)}
+                  >
+                    <DialogContent className="max-w-[500px] bg-white">
+                      <DialogHeader>
+                        <DialogTitle className="w-[80%]">
+                          Cấu hình Email
+                        </DialogTitle>
+                        <DialogDescription className="hidden"></DialogDescription>
+                      </DialogHeader>
+                      <div className="grid gap-4">
+                        <Form {...formConfig}>
+                          <form
+                            onSubmit={formConfig.handleSubmit(onSubmitConfig)}
+                            className="w-full space-y-6"
+                          >
+                            <FormField
+                              control={formConfig.control}
+                              name="email"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Email</FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      {...field}
+                                      placeholder="Nhập email..."
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={formConfig.control}
+                              name="password"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Mật khẩu</FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      {...field}
+                                      placeholder="Nhập mật khẩu..."
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <div className="flex justify-center items-center">
+                              <Button type="submit" className="bg-gray-200">
+                                Lưu
+                              </Button>
+                            </div>
+                          </form>
+                        </Form>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 </div>
               )}
               <div
