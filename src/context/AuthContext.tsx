@@ -17,6 +17,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const login = (accessToken: string, refreshToken: string) => {
     localStorage.setItem("token", accessToken);
+    localStorage.setItem("refreshToken", refreshToken);
     setToken(accessToken);
     handleLoginSuccess(accessToken, refreshToken); // Start refresh cycle
     navigate("/dashboard"); // Redirect to dashboard after login

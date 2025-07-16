@@ -40,6 +40,8 @@ export default function LoginPage() {
   const onSubmit = async (data: z.infer<typeof FormSchema>) => {
     try {
       const res = await api.post("/auth/login", data);
+      console.log("Login response:", res.data);
+      
       login(res.data.access_token, res.data.refresh_token); // Pass both tokens
       // lưu user vào localStorage
       localStorage.setItem("user", JSON.stringify(res.data.user));

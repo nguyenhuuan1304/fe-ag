@@ -3,10 +3,12 @@ import type { AxiosResponse, AxiosRequestConfig } from "axios";
 import config from '../config';
 
 const api = axios.create({
+  // baseURL: config.API_URL,
   baseURL: config.API_URL,
   headers: {
     "Content-Type": "application/json",
   },
+  withCredentials: true,
 });
 
 interface RefreshTokenResponse {
