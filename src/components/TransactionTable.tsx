@@ -73,6 +73,7 @@ type Transaction = {
   document: string;
   censored: boolean;
   post_inspection: boolean;
+  is_send_email: boolean;
 };
 
 const FormSchema = z.object({
@@ -501,6 +502,9 @@ export default function TransactionTable({
                   {user?.role === "GDV_TTQT" && (
                     <th className="text-left p-2">Trạng thái</th>
                   )}
+                  <th className="text-left p-2">
+                    Trạng thái <br /> gửi mail
+                  </th>
                   {user?.role === "KSV_TTQT" && (
                     <th className="text-left p-2">Kiểm duyệt</th>
                   )}
@@ -542,6 +546,17 @@ export default function TransactionTable({
                         </div>
                       </td>
                     )}
+                    <td className="p-2 w-fit">
+                      <div
+                        className={`px-2 py-1 rounded-2xl w-fit ${
+                          !tx.is_send_email
+                            ? "bg-red-500 text-white"
+                            : "bg-green-500 text-white"
+                        }`}
+                      >
+                        {tx.is_send_email ? "Đã gửi email" : "Chưa gửi email"}
+                      </div>
+                    </td>
                     {user?.role === "KSV_TTQT" && (
                       <td className="p-2">
                         <div
