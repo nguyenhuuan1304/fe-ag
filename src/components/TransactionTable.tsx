@@ -229,7 +229,14 @@ export default function TransactionTable({
   // Page change handler
   const handlePageChange = async (newPage: number) => {
     setPage(newPage);
-    await loadData(newPage, search);
+    if (
+      user?.role === "GDV_HK" &&
+      (status === "Chưa hậu kiểm" || status === "Đã hậu kiểm")
+    ) {
+      await loadDataHK(newPage, search);
+    } else {
+      await loadData(newPage, search);
+    }
   };
 
   // Open edit modal and load transaction data
