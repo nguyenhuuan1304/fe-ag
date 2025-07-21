@@ -37,6 +37,12 @@ export function TabsHeader() {
               </TabsTrigger>
             </>
           )}
+          {["ADMIN", "GDV_HK"].includes(user?.role) && (
+            <>
+              <TabsTrigger value="notPostCheck">Chưa hậu kiểm</TabsTrigger>
+              <TabsTrigger value="postedCheck">Đã hậu kiểm</TabsTrigger>
+            </>
+          )}
         </TabsList>
         <TabsContent value="unsubmitted">
           <TransactionTable status="Chưa bổ sung" />
@@ -46,6 +52,12 @@ export function TabsHeader() {
         </TabsContent>
         <TabsContent value="overdue">
           <TransactionTable status="Quá hạn" />
+        </TabsContent>
+        <TabsContent value="postedCheck">
+          <TransactionTable status="Đã hậu kiểm" />
+        </TabsContent>
+        <TabsContent value="notPostCheck">
+          <TransactionTable status="Chưa hậu kiểm" />
         </TabsContent>
         <TabsContent value="notSendMailList">
           <CustomerTable />

@@ -3,7 +3,7 @@ import {
   fetchTransactionsById,
   fetchTransactionsNotYet,
   fetchTransactionsUpdateById,
-  GetTransactionsHK,
+  GetTransactionsByPostInspection,
   reportExcel,
   reportPostInspectionExcel,
   updateTransactionsHKUpdateById,
@@ -166,7 +166,13 @@ export default function TransactionTable({
   const loadDataHK = async (customPage = page, customSearch = search) => {
     setLoading(true);
     try {
-      const res = await GetTransactionsHK(customPage, 10, customSearch);
+      const isPostInspection = status === "Đã hậu kiểm";
+      const res = await GetTransactionsByPostInspection(
+        isPostInspection,
+        customPage,
+        10,
+        customSearch
+      );
       setData(res.data || []);
       setLastPage(res?.lastPage ?? 1);
     } catch (err) {
@@ -180,7 +186,10 @@ export default function TransactionTable({
 
   // Initial load (only once)
   useEffect(() => {
-    if (user?.role === "GDV_HK") {
+    if (
+      user?.role === "GDV_HK" &&
+      (status === "Chưa hậu kiểm" || status === "Đã hậu kiểm")
+    ) {
       loadDataHK();
     } else {
       loadData();
@@ -207,7 +216,14 @@ export default function TransactionTable({
     const trimmed = searchInput.trim();
     setSearch(trimmed);
     setPage(1);
-    await loadData(1, trimmed);
+    if (
+      user?.role === "GDV_HK" &&
+      (status === "Chưa hậu kiểm" || status === "Đã hậu kiểm")
+    ) {
+      await loadDataHK(1, trimmed);
+    } else {
+      await loadData(1, trimmed);
+    }
   };
 
   // Page change handler
@@ -380,6 +396,10 @@ export default function TransactionTable({
     }
   };
 
+  const handleReSendEmail = async (transactionId: number) => {
+    console.log("Re-send email for transaction ID:", transactionId);
+  };
+
   return (
     <>
       <div className="flex justify-start gap-4">
@@ -398,7 +418,7 @@ export default function TransactionTable({
               Tìm kiếm
             </Button>
           </form>
-          {status !== "Đã bổ sung" && (
+          {status !== "Đã bổ sung" && status !== 'Chưa hậu kiểm' && status !== 'Đã hậu kiểm' && (
             <Button onClick={handleEx} className="bg-gray-100">
               {isLoadingEx ? (
                 <div className="flex items-center">
@@ -548,7 +568,7 @@ export default function TransactionTable({
                     )}
                     <td className="p-2 w-fit">
                       <div
-                        className={`px-2 py-1 rounded-2xl w-fit ${
+                        className={`px-2 py-1 rounded-2xl w-fit text-center ${
                           !tx.is_send_email
                             ? "bg-red-500 text-white"
                             : "bg-green-500 text-white"
@@ -560,7 +580,7 @@ export default function TransactionTable({
                     {user?.role === "KSV_TTQT" && (
                       <td className="p-2">
                         <div
-                          className={`px-2 py-1 rounded-2xl w-fit ${
+                          className={`px-2 py-1 rounded-2xl w-fit text-center ${
                             tx.censored
                               ? "bg-green-500 text-white"
                               : "bg-red-500 text-white"
@@ -573,7 +593,7 @@ export default function TransactionTable({
                     {user?.role === "GDV_HK" && (
                       <td className="p-2">
                         <div
-                          className={`px-2 py-1 rounded-2xl w-fit ${
+                          className={`px-2 py-1 rounded-2xl w-fit text-center ${
                             tx.post_inspection
                               ? "bg-green-500 text-white"
                               : "bg-red-500 text-white"
@@ -596,7 +616,7 @@ export default function TransactionTable({
                     {user?.role === "GDV_HK" && (
                       <td className="p-2">{tx.note_inspection ?? "-"}</td>
                     )}
-                    <td className="p-2">
+                    <td className="p-2 flex gap-3 items-center">
                       <Dialog
                         open={editDialogOpen}
                         onOpenChange={setEditDialogOpen}
@@ -910,6 +930,16 @@ export default function TransactionTable({
                           )}
                         </DialogContent>
                       </Dialog>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="bg-gray-100 w-[120px]"
+                        onClick={() => {
+                          handleReSendEmail(tx.id);
+                        }}
+                      >
+                        Gửi lại mail
+                      </Button>
                     </td>
                   </tr>
                 ))}
