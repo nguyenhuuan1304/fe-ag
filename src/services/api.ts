@@ -36,6 +36,18 @@ export const GetTransactionsHK = async (
   return res.data;
 };
 
+export const GetTransactionsByPostInspection = async (
+  postInspection: boolean,
+  page: number,
+  limit: number,
+  search: string
+) => {
+  const res = await axios.get(`/transactions/hk/post-inspection`, {
+    params: { page, limit, search, postInspection },
+  });
+  return res.data;
+};
+
 export const fetchCustomer = async (
   page: number,
   pageSize: number,
@@ -221,5 +233,10 @@ export const updateConfigEmail = async (id: number, data: {
   password: string;
 }) => {
   const response = await axios.put(`/config-email/${id}`, data);
+  return response.data;
+};
+
+export const resendEmail = async (transactionId: number) => {
+  const response = await axios.post('/customers/resend-email', { transactionId });
   return response.data;
 };
