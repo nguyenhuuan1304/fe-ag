@@ -235,3 +235,8 @@ export const updateConfigEmail = async (id: number, data: {
   const response = await axios.put(`/config-email/${id}`, data);
   return response.data;
 };
+
+export const resendEmail = async (transactionId: number) => {
+  const response = await axios.post('/customers/resend-email', { transactionId });
+  return response.data;
+};

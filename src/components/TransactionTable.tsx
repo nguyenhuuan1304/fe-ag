@@ -6,6 +6,7 @@ import {
   GetTransactionsByPostInspection,
   reportExcel,
   reportPostInspectionExcel,
+  resendEmail,
   updateTransactionsHKUpdateById,
   updateTransactionsKSVUpdateById,
   uploadTransactionFile,
@@ -404,7 +405,17 @@ export default function TransactionTable({
   };
 
   const handleReSendEmail = async (transactionId: number) => {
-    console.log("Re-send email for transaction ID:", transactionId);
+    try {
+      const response = await resendEmail(transactionId);
+      if (response.success) {
+        toast.success("Gửi lại email thành công!");
+      } else {
+        toast.error("Gửi lại email thất bại. Vui lòng thử lại.");
+      }
+    } catch (error) {
+      console.error("Error re-sending email:", error);
+      toast.error("Gửi lại email thất bại. Vui lòng thử lại.");
+    }
   };
 
   return (
