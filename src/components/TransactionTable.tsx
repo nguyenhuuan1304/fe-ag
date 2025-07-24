@@ -105,6 +105,7 @@ export default function TransactionTable({
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
+  const [searchField, setSearchField] = useState("Tên khách hàng");
   const [file, setFile] = useState<File | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -151,7 +152,8 @@ export default function TransactionTable({
         customPage,
         10,
         status,
-        customSearch
+        customSearch,
+        searchField
       );
       setData(res.data || []);
       setLastPage(res?.lastPage ?? 1);
@@ -172,7 +174,8 @@ export default function TransactionTable({
         isPostInspection,
         customPage,
         10,
-        customSearch
+        customSearch,
+        searchField
       );
       setData(res.data || []);
       setLastPage(res?.lastPage ?? 1);
@@ -422,12 +425,26 @@ export default function TransactionTable({
     <>
       <div className="flex justify-start gap-4">
         <div className="flex items-center gap-4">
-          <form onSubmit={handleSearchSubmit} className="flex gap-2 max-w-md">
+          <form onSubmit={handleSearchSubmit} className="flex gap-2">
             <Input
-              placeholder="Tìm theo tên khách hàng..."
+              placeholder="Tìm theo tên khách hàng hoặc số giao dịch..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
             />
+            <Select
+              value={searchField}
+              onValueChange={(value) => {
+                setSearchField(value);
+              }}
+            >
+              <SelectTrigger className="w-[300px]">
+                <SelectValue placeholder="Chọn field tìm kiếm" />
+              </SelectTrigger>
+              <SelectContent className="bg-white">
+                <SelectItem value="Tên khách hàng">Tên khách hàng</SelectItem>
+                <SelectItem value="Số giao dịch">Số giao dịch</SelectItem>
+              </SelectContent>
+            </Select>
             <Button
               className="w-[200px] bg-gray-100"
               type="submit"
@@ -436,18 +453,20 @@ export default function TransactionTable({
               Tìm kiếm
             </Button>
           </form>
-          {status !== "Đã bổ sung" && status !== 'Chưa hậu kiểm' && status !== 'Đã hậu kiểm' && (
-            <Button onClick={handleEx} className="bg-gray-100">
-              {isLoadingEx ? (
-                <div className="flex items-center">
-                  <Loader2 className="animate-spin h-4 w-4" />
-                  <span className="ml-2">Đang xuất excel...</span>
-                </div>
-              ) : (
-                "Xuất excel"
-              )}
-            </Button>
-          )}
+          {status !== "Đã bổ sung" &&
+            status !== "Chưa hậu kiểm" &&
+            status !== "Đã hậu kiểm" && (
+              <Button onClick={handleEx} className="bg-gray-100">
+                {isLoadingEx ? (
+                  <div className="flex items-center">
+                    <Loader2 className="animate-spin h-4 w-4" />
+                    <span className="ml-2">Đang xuất excel...</span>
+                  </div>
+                ) : (
+                  "Xuất excel"
+                )}
+              </Button>
+            )}
           {["ADMIN", "GDV_HK"].includes(user?.role) &&
             status === "Đã bổ sung" && (
               <div className="flex gap-2">
