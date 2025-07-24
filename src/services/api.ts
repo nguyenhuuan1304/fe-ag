@@ -16,11 +16,12 @@ export const fetchTransactionsNotYet = async (
   page: number,
   limit: number,
   status: string,
-  search: string
+  search: string,
+  searchField: string
 ) => {
   const note = encodeURIComponent(status);
   const res = await axios.get(`/transactions/status/${note}`, {
-    params: { page, limit, search },
+    params: { page, limit, search, searchField },
   });
   return res.data;
 };
@@ -40,10 +41,11 @@ export const GetTransactionsByPostInspection = async (
   postInspection: boolean,
   page: number,
   limit: number,
-  search: string
+  search: string,
+  searchField: string
 ) => {
   const res = await axios.get(`/transactions/hk/post-inspection`, {
-    params: { page, limit, search, postInspection },
+    params: { page, limit, search, postInspection, searchField },
   });
   return res.data;
 };
