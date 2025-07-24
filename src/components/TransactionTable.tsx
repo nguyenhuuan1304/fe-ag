@@ -634,7 +634,11 @@ export default function TransactionTable({
                     {user?.role === "GDV_HK" && (
                       <td className="p-2">{tx.note_inspection ?? "-"}</td>
                     )}
-                    <td className="p-2 flex gap-3 items-center">
+                    <td
+                      className={`p-2 ${
+                        status === "Quá hạn" && "flex gap-3 items-center"
+                      }`}
+                    >
                       <Dialog
                         open={editDialogOpen}
                         onOpenChange={setEditDialogOpen}
@@ -948,16 +952,18 @@ export default function TransactionTable({
                           )}
                         </DialogContent>
                       </Dialog>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="bg-gray-100 w-[120px]"
-                        onClick={() => {
-                          handleReSendEmail(tx.id);
-                        }}
-                      >
-                        Gửi lại mail
-                      </Button>
+                      {status === "Quá hạn" && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="bg-gray-100 w-[120px]"
+                          onClick={() => {
+                            handleReSendEmail(tx.id);
+                          }}
+                        >
+                          Gửi lại mail
+                        </Button>
+                      )}
                     </td>
                   </tr>
                 ))}
