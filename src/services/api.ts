@@ -244,3 +244,20 @@ export const resendEmail = async (transactionId: number) => {
   });
   return response.data;
 };
+
+export const addTransaction = async (data: {
+  trref: string;
+  custno: string;
+  custnm: string;
+  amount: string;
+  currency: string;
+  tradate: Date | string;
+  remark: string;
+  document: string;
+  bencust: string;
+  esdate: Date | string;
+  note: string;
+}) => {
+  const response = await axios.post("/transactions/add", data);
+  return response.data;
+};
