@@ -49,6 +49,7 @@ import {
   SelectValue,
 } from "./ui/select";
 import { toast } from "sonner";
+import { AddTransactionForm } from "./AddTransactionForm";
 
 type Transaction = {
   amount: string;
@@ -502,6 +503,7 @@ export default function TransactionTable({
         {["ADMIN", "GDV_TTQT"].includes(user?.role) &&
           status === "Chưa bổ sung" && (
             <div className="flex gap-2">
+              <AddTransactionForm reloadData={loadData} />
               <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogTrigger asChild>
                   <Button
