@@ -79,7 +79,14 @@ export function AddTransactionForm({ reloadData }: { reloadData: () => void }) {
   };
 
   return (
-    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+    <Dialog open={dialogOpen} onOpenChange={() => {
+      if (dialogOpen) {
+        setDialogOpen(false);
+        form.reset();
+      } else {
+        setDialogOpen(true);
+      }
+    }}>
       <DialogTrigger asChild>
         <Button
           className="w-[120px] !bg-[#af1b3f] text-white"
